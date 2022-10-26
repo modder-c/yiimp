@@ -9,7 +9,7 @@ SQLFLAGS= `mysql_config --cflags --libs`
 CFLAGS += -DNO_EXCHANGE
 
 #CFLAGS=-c -O2 -I /usr/include/mysql
-LDFLAGS=-O2 `mysql_config --libs`   -Iocv2_algo/dependencies/sha `env PKG_CONFIG_LIBDIR=ocv2_algo/dependencies/opencv/this-system-release/lib/pkgconfig pkg-config --static --cflags --libs opencv` -std=c++11   
+LDFLAGS=-O2 `mysql_config --libs` -I/usr/local/include -L/usr/local/lib -locv2   
 
 LDLIBS=iniparser/libiniparser.a algos/libalgos.a sha3/libhash.a -Isecp256k1/include secp256k1/.libs/libsecp256k1.a -lpthread -lgmp -lm -lstdc++ -lssl -lcrypto 
 LDLIBS+=-lmysqlclient
