@@ -4,7 +4,7 @@ CC=gcc -g -ggdb
 #CFLAGS=-c -g -I /usr/include/mysql
 #LDFLAGS=-g
 
-CXXFLAGS = -O2 -I.. -march=native -pipe  -I../ocv2_algo/dependencies/sha `env PKG_CONFIG_LIBDIR=../ocv2_algo/dependencies/opencv/this-system-release/lib/pkgconfig pkg-config --static --cflags --libs opencv` -std=c++11 
+CXXFLAGS = -O2 -I.. -march=native -pipe -I/usr/local/include -L/usr/local/lib -locv2 
 CFLAGS= $(CXXFLAGS) -std=gnu99
 LDFLAGS=-O2 -lgmp
 
