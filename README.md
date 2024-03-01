@@ -1,5 +1,41 @@
 <h1 align="center"> Yiimp - Yaamp Fork </h1>
 
+<h2 align="left"> Container-Environment </h3>
+
+Makefile cointains some helper commands for easier handling
+
+<h3 align="left"> Requirements </h3>
+
+* Linux
+* Mysql
+* Docker or Podman
+* Memcached
+
+<h3 align="left"> build docker </h3>
+
+use
+
+	make build
+
+or as single command
+
+	podman build --tag yiimp --target image-prod -f Dockerfile.yiimp
+
+<h3 align="left"> configuration und run </h3>
+
+* the container has only default config built in so you have to link the live-config inside
+* use "serverconfig.sample.php" as config template , rename to serverconfig.php and move config-dir
+* to access logfiles export the log-directory and the apache logfiles
+
+to start container
+
+	make run
+
+or as single command
+
+	podman run --name=yiimp --network=host -v ./config:/etc/yiimp -v ./log:/var/log/apache2 yiimp
+
+<h2 align="left"> original description - maybe outdated</h2>
 <h3 align="left"> Requirements </h3>
 
 * Linux
