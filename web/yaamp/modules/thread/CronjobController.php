@@ -1,6 +1,6 @@
 <?php
 
-require_once('serverconfig.php');
+require_once('/etc/yiimp/serverconfig.php');
 require_once('yaamp/defaultconfig.php');
 
 class CronjobController extends CommonController

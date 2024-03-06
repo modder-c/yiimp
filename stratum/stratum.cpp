@@ -48,6 +48,7 @@ int g_limit_txs_per_block = 0;
 bool g_handle_haproxy_ips = false;
 int g_socket_recv_timeout = 600;
 
+char g_log_directory[1024];
 bool g_debuglog_client;
 bool g_debuglog_hash;
 bool g_debuglog_socket;
@@ -266,14 +267,16 @@ int main(int argc, char **argv)
 {
 	if(argc < 2)
 	{
-		printf("usage: %s <algo>\n", argv[0]);
+		printf("usage: %s <config_file>\n", argv[0]);
 		return 1;
 	}
 
 	srand(time(NULL));
 	getifaddrs(&g_ifaddr);
 
-	initlog(argv[1]);
+	// init g_log_directory with static value until set by config
+	sprintf(g_log_directory, "/var/log/yiimp/");
+	initlog(NULL);
 
 #ifdef NO_EXCHANGE
 	// todo: init with a db setting or a yiimp shell command
@@ -281,7 +284,7 @@ int main(int argc, char **argv)
 #endif
 
 	char configfile[1024];
-	sprintf(configfile, "%s.conf", argv[1]);
+	sprintf(configfile, "%s", argv[1]);
 
 	dictionary *ini = iniparser_load(configfile);
 	if(!ini)
@@ -310,6 +313,9 @@ int main(int argc, char **argv)
 	g_stratum_difficulty = iniparser_getdouble(ini, "STRATUM:difficulty", 16);
 	g_stratum_min_diff = iniparser_getdouble(ini, "STRATUM:diff_min", g_stratum_difficulty/2);
 	g_stratum_max_diff = iniparser_getdouble(ini, "STRATUM:diff_max", g_stratum_difficulty*8192);
+	
+	char *new_log_directory = iniparser_getstring(ini, "STRATUM:logdir", NULL);
+	if (new_log_directory) { strcpy(g_log_directory, new_log_directory); }
 
 	g_stratum_nicehash_difficulty = iniparser_getdouble(ini, "STRATUM:nicehash", 16);
 	g_stratum_nicehash_min_diff = iniparser_getdouble(ini, "STRATUM:nicehash_diff_min", g_stratum_nicehash_difficulty/2);
@@ -333,6 +339,9 @@ int main(int argc, char **argv)
 	g_debuglog_remote = iniparser_getint(ini, "DEBUGLOG:remote", false);
 
 	iniparser_freedict(ini);
+
+	// re-init logfiles
+	closelogs(); initlog(g_stratum_algo);
 
 	g_current_algo = stratum_find_algo(g_stratum_algo);
 

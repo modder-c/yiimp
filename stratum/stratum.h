@@ -100,6 +100,7 @@ extern int g_limit_txs_per_block;
 extern bool g_handle_haproxy_ips;
 extern int g_socket_recv_timeout;
 
+extern char g_log_directory[1024];
 extern bool g_debuglog_client;
 extern bool g_debuglog_hash;
 extern bool g_debuglog_socket;

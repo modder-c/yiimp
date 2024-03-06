@@ -94,12 +94,17 @@ void initlog(const char *algo)
 {
 	char debugfile[1024];
 
-	sprintf(debugfile, "%s.log", algo);
-	g_debuglog = fopen(debugfile, "w");
+	if (algo != NULL) {
+		sprintf(debugfile, "%s%s.log", g_log_directory ,algo);
+		g_debuglog = fopen(debugfile, "w");
+	}
 
-	g_stratumlog = fopen("stratum.log", "a");
-	g_clientlog = fopen("client.log", "a");
-	g_rejectlog = fopen("reject.log", "a");
+	sprintf(debugfile, "%sstratum.log", g_log_directory);
+	g_stratumlog = fopen(debugfile, "a");
+	sprintf(debugfile, "%sclient.log", g_log_directory);
+	g_clientlog = fopen(debugfile, "a");
+	sprintf(debugfile, "%sreject.log", g_log_directory);
+	g_rejectlog = fopen(debugfile, "a");
 }
 
 void closelogs()

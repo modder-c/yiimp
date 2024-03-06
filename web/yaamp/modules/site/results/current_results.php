@@ -66,6 +66,7 @@ $total_solo_workers = 0;
 $showestimates = false;
 echo "<tbody>";
 
+$total_coins = 0; $total_users = 0; $total_workers = 0; $total_solo_workers = 0;
 foreach ($algos as $item)
 {
     $norm = $item[0];
