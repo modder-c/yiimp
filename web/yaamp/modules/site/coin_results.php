@@ -417,6 +417,12 @@ if ($DCR) {
 
 $rows = 0;
 foreach ($txs_array as $tx) {
+    if (!isset($tx['amount'])) {
+        if (!isset($tx['reward'])) continue;
+
+        $tx['amount'] = $tx['reward'];
+    }
+    
     $category = arraySafeVal($tx, 'category');
     if ($category == 'spent')
         continue;
@@ -510,9 +516,9 @@ end;
 
 $sums = array();
 foreach ($txs_array as $tx) {
-    if (!isset($tx['time']))
-        continue;
-
+    if (!isset($tx['time'])) continue;
+    if (!isset($tx['amount'])) continue;
+    
     $day = strftime('%F', $tx['time']); // YYYY-MM-DD
     if ($day == $lastday)
         break; // do not show truncated days

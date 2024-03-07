@@ -58,15 +58,10 @@ define('YIIMP_MYSQLDUMP_PASS', '<my_mysql_password>');
  *
  * access tokens required to create/cancel orders and access your balances/deposit addresses
  */
-define('EXCH_ALCUREX_KEY', '');
-
 define('EXCH_ALTMARKETS_KEY', '');
 
 define('EXCH_BINANCE_KEY', '');
 define('EXCH_BINANCE_SECRET', '');
-
-define('EXCH_BITTREX_KEY', '');
-define('EXCH_BITTREX_SECRET', '');
 
 define('EXCH_BLEUTRADE_KEY', '');
 define('EXCH_BLEUTRADE_SECRET', '');
@@ -75,9 +70,6 @@ define('EXCH_BTER_KEY', '');
 define('EXCH_BTER_SECRET', '');
 
 define('EXCH_CEXIO_SECRET', '');
-
-define('EXCH_EMPOEX_KEY', '');
-define('EXCH_EMPOEX_SECKEY', '');
 
 define('EXCH_EXBITRON_KEY', '');
 
@@ -89,13 +81,8 @@ define('EXCH_KRAKEN_SECRET','');
 
 define('EXCH_KUCOIN_SECRET', '');
 
-define('EXCH_LIVECOIN_KEY', '');
-define('EXCH_LIVECOIN_SECRET', '');
-
 define('EXCH_POLONIEX_KEY', '');
 define('EXCH_POLONIEX_SECRET', '');
-
-define('EXCH_STOCKSEXCHANGE_SECRET', '');
 
 define('EXCH_TRADEOGRE_SECRET', '');
 

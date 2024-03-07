@@ -51,7 +51,7 @@ COPY /config/xdebug.ini /usr/local/etc/php/conf.d/
 
 # change apache run-group to match with virtualbox-env
 RUN sed -i 's/APACHE_RUN_GROUP:=www-data/APACHE_RUN_GROUP:=vboxsf/g' /etc/apache2/envvars
-RUN groupadd -g 999 vboxsf
+RUN groupadd -g 999 vboxsf && usermod -a -G vboxsf www-data
 
 WORKDIR /var/www/
 CMD ["apache2-foreground"]

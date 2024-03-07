@@ -142,11 +142,6 @@ class ExchangeCommand extends CConsoleCommand
 			if (!is_array($balance)) echo "cexio error ".json_encode($balance)."\n";
 			else echo("cexio: ".json_encode(arraySafeVal($balance,"BTC",$balance))."\n");
 		}
-		if (!empty(EXCH_BITTREX_KEY)) {
-			$balance = bittrex_api_query('account/getbalance','&currency=BTC');
-			if (!is_object($balance)) echo "bittrex error\n";
-			else echo("bittrex btc: ".json_encode($balance->result)."\n");
-		}
 		if (!empty(EXCH_BLEUTRADE_KEY)) {
 			$balance = bleutrade_api_query('account/getbalances','&currencies=BTC');
 			//$balance = bleutrade_api_query('account/getbalances');
@@ -176,32 +171,16 @@ class ExchangeCommand extends CConsoleCommand
 			if (!is_object($balance) || !isset($balance->data)) echo "kucoin error ".json_encode($balance)."\n";
 			else echo("kucoin: ".json_encode($balance->data)."\n");
 		}
-		if (!empty(EXCH_LIVECOIN_KEY)) {
-			$livecoin = new LiveCoinApi;
-			$balance = $livecoin->getBalances('BTC');
-			if (!$balance) echo("livecoin error\n");
-			else echo("livecoin btc: ".json_encode($balance)."\n");
-			// {"type":"available","currency":"BTC","value":0}
-		}
 
 		if(!empty(EXCH_POLONIEX_KEY)) {
 			$poloniex = new poloniex;
 			$balance = $poloniex->get_available_balances();
 			echo("poloniex available : ".json_encode($balance)."\n");
 		}
-		if (!empty(EXCH_STOCKSEXCHANGE_KEY)) {
-			// $info = stocksexchange_api_user('Deposit',array("currency"=>"BTC"));
-			$info = stocksexchange_api_user('GetInfo');
-			if (!is_array($info) || arraySafeVal($info,'success') != 1) echo "stocksexchange error ".json_encode($info)."\n";
-			else echo("stocksexchange: ".json_encode($info['data']['funds'])."\n");
-		}
 		if (!empty(EXCH_YOBIT_KEY)) {
 			$info = yobit_api_query2('getInfo');
 			if (!arraySafeVal($info,'success',0) || !is_array($info['return'])) echo "error\n";
 			else echo("yobit btc: ".json_encode($info['return']['funds']['btc'])."\n");
 		}
-		// only one secret key
-		$balance = empoex_api_user('account/balance','BTC');
-		if ($balance) echo("empoex btc: ".json_encode($balance['available'])."\n");
 	}
 }

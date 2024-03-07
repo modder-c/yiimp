@@ -2,15 +2,13 @@
 require_once('poloniex_trading.php');
 require_once('binance_trading.php');
 require_once('exbitron_trading.php');
-require_once('bittrex_trading.php');
 require_once('bleutrade_trading.php');
 require_once('bter_trading.php');
 require_once('kraken_trading.php');
 require_once('yobit_trading.php');
-require_once('alcurex_trading.php');
 require_once('hitbtc_trading.php');
 require_once('kucoin_trading.php');
-require_once('livecoin_trading.php');
+
 
 
 function cancelExchangeOrder($order=false)
@@ -24,9 +22,6 @@ function cancelExchangeOrder($order=false)
 			case 'binance':
 				doBinanceCancelOrder($order->uuid);
 				break;
-			case 'bittrex':
-				doBittrexCancelOrder($order->uuid);
-				break;
 			case 'bleutrade':
 				doBleutradeCancelOrder($order->uuid);
 				break;
@@ -36,10 +31,6 @@ function cancelExchangeOrder($order=false)
 			case 'kucoin':
 				doKuCoinCancelOrder($order->uuid);
 				break;
-			case 'livecoin':
-				doLiveCoinCancelOrder($order->uuid);
-				break;
-
 		}
 }
 
@@ -49,11 +40,6 @@ function runExchange($exchangeName=false)
 	{
 		switch($exchangeName)
 		{
-			case 'alcurex':
-				//doAlcurexTrading(true);
-				updateAlcurexMarkets();
-				break;
-
 			case 'binance':
 				doBinanceTrading(true);
 				updateBinanceMarkets();
@@ -68,10 +54,6 @@ function runExchange($exchangeName=false)
 				getBitstampBalances();
 				break;
 
-			case 'bittrex':
-				doBittrexTrading(true);
-				updateBittrexMarkets();
-				break;
 			case 'bitz':
 				updateBitzMarkets();
 				break;
@@ -85,11 +67,6 @@ function runExchange($exchangeName=false)
 				updateExbitronMarkets();
 				break;
 				
-			case 'empoex':
-				//doEmpoexTrading(true);
-				//updateEmpoexMarkets();
-				break;
-
 			case 'yobit':
 				doYobitTrading(true);
 				updateYobitMarkets();
@@ -113,11 +90,6 @@ function runExchange($exchangeName=false)
 			case 'kucoin':
 				doKuCoinTrading(true);
 				updateKucoinMarkets();
-				break;
-
-			case 'livecoin':
-				doLiveCoinTrading(true);
-				updateLiveCoinMarkets();
 				break;
 
 			case 'poloniex':
