@@ -29,8 +29,6 @@ if (!defined('EXCH_AUTO_WITHDRAW')) define('EXCH_AUTO_WITHDRAW', 9999.9999);
 if (!defined('EXCH_BINANCE_KEY')) define('EXCH_BINANCE_KEY', '');
 if (!defined('EXCH_BITSTAMP_ID')) define('EXCH_BITSTAMP_ID', '');
 if (!defined('EXCH_BITSTAMP_KEY')) define('EXCH_BITSTAMP_KEY','');
-if (!defined('EXCH_BLEUTRADE_KEY')) define('EXCH_BLEUTRADE_KEY', '');
-if (!defined('EXCH_BTER_KEY')) define('EXCH_BTER_KEY', '');
 if (!defined('EXCH_CEXIO_ID')) define('EXCH_CEXIO_ID', '');
 if (!defined('EXCH_CEXIO_KEY')) define('EXCH_CEXIO_KEY', '');
 if (!defined('EXCH_HITBTC_KEY')) define('EXCH_HITBTC_KEY', '');

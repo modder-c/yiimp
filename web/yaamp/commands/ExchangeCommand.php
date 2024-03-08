@@ -142,17 +142,6 @@ class ExchangeCommand extends CConsoleCommand
 			if (!is_array($balance)) echo "cexio error ".json_encode($balance)."\n";
 			else echo("cexio: ".json_encode(arraySafeVal($balance,"BTC",$balance))."\n");
 		}
-		if (!empty(EXCH_BLEUTRADE_KEY)) {
-			$balance = bleutrade_api_query('account/getbalances','&currencies=BTC');
-			//$balance = bleutrade_api_query('account/getbalances');
-			if (!is_object($balance)) echo "bleutrade error\n";
-			else echo("bleutrade btc: ".json_encode($balance->result)."\n");
-		}
-		if (!empty(EXCH_BTER_KEY)) {
-			$info = bter_api_user('getfunds');
-			if (!$info || arraySafeVal($info,'result') != 'true' || !isset($info['available_funds'])) echo "bter error\n";
-			else echo("bter available: ".json_encode($info['available_funds'])."\n");
-		}
 
 		if (!empty(EXCH_HITBTC_KEY)) {
 			$data = hitbtc_api_user('trading/balance');

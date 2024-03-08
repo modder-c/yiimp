@@ -63,12 +63,6 @@ define('EXCH_ALTMARKETS_KEY', '');
 define('EXCH_BINANCE_KEY', '');
 define('EXCH_BINANCE_SECRET', '');
 
-define('EXCH_BLEUTRADE_KEY', '');
-define('EXCH_BLEUTRADE_SECRET', '');
-
-define('EXCH_BTER_KEY', '');
-define('EXCH_BTER_SECRET', '');
-
 define('EXCH_CEXIO_SECRET', '');
 
 define('EXCH_EXBITRON_KEY', '');

@@ -2,8 +2,6 @@
 require_once('poloniex_trading.php');
 require_once('binance_trading.php');
 require_once('exbitron_trading.php');
-require_once('bleutrade_trading.php');
-require_once('bter_trading.php');
 require_once('kraken_trading.php');
 require_once('yobit_trading.php');
 require_once('hitbtc_trading.php');
@@ -21,9 +19,6 @@ function cancelExchangeOrder($order=false)
 				break;
 			case 'binance':
 				doBinanceCancelOrder($order->uuid);
-				break;
-			case 'bleutrade':
-				doBleutradeCancelOrder($order->uuid);
 				break;
 			case 'hitbtc':
 				doHitBTCCancelOrder($order->uuid);
@@ -45,17 +40,8 @@ function runExchange($exchangeName=false)
 				updateBinanceMarkets();
 				break;
 
-			case 'bter':
-				doBterTrading(true);
-				updateBterMarkets();
-				break;
-
 			case 'bitstamp':
 				getBitstampBalances();
-				break;
-
-			case 'bitz':
-				updateBitzMarkets();
 				break;
 
 			case 'cexio':
@@ -70,11 +56,6 @@ function runExchange($exchangeName=false)
 			case 'yobit':
 				doYobitTrading(true);
 				updateYobitMarkets();
-				break;
-
-			case 'bleutrade':
-				doBleutradeTrading(true);
-				updateBleutradeMarkets();
 				break;
 
 			case 'hitbtc':
@@ -97,10 +78,6 @@ function runExchange($exchangeName=false)
 				updatePoloniexMarkets();
 				break;
 			
-			case 'deliondex':
-				updateDelionDexMarkets();
-				break;
-
 			default:
 				debuglog(__FUNCTION__.' '.$exchangeName.' not implemented');
 		}

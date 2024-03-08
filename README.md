@@ -35,6 +35,16 @@ or as single command
 
 	podman run --name=yiimp --network=host -v ./config:/etc/yiimp -v ./log:/var/log/apache2 yiimp
 
+inside the container starts supervisord for controlling the parts of pool altogether
+to start/stop each part head to http://localhost:8900/ or use cli
+
+	supervisorctl -u yiimp -p supervisor -s http://127.0.0.1:8900 status
+
+change supervisord.conf to 
+* set username and password
+* add stratum instances
+* control backend-processes
+
 <h2 align="left"> original description - maybe outdated</h2>
 <h3 align="left"> Requirements </h3>
 
@@ -197,3 +207,5 @@ xiaolin1579 :
 	
 	RXD : 1N8WZpwSPaFvbaSMzDrPbLqbfM8tLVE87e
 
+tpfuemp :
+	DOGE : DNQdyeLu9DtRfsZCFvy1GfJTwjWJoSWHLh

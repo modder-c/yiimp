@@ -9,8 +9,6 @@ function updateRawcoins()
 	// exit();
 	exchange_set_default('altmarkets', 'disabled', true);
 	exchange_set_default('binance', 'disabled', true);
-	exchange_set_default('bleutrade', 'disabled', true);
-	exchange_set_default('bter', 'disabled', true);
 	exchange_set_default('exbitron', 'disabled', false);
 	exchange_set_default('hitbtc', 'disabled', true);
 	exchange_set_default('kraken', 'disabled', true);
@@ -20,7 +18,7 @@ function updateRawcoins()
 
 	settings_prefetch_all();
 
-	// $markets_name = array('zyrex','p2pb2b','bitmesh','btc-alpha','tradeogre','bibox','bitz','bleutrade','coinbene','poloniex','yobit','coinsmarkets','cryptrade','escodex','hitbtc','kraken','binance','gateio','kucoin','shapeshift');
+	// $markets_name = array('zyrex','p2pb2b','bitmesh','btc-alpha','tradeogre','bibox','coinbene','poloniex','yobit','coinsmarkets','escodex','hitbtc','kraken','binance','gateio','kucoin','shapeshift');
 	$exchanges = getdbolist('db_balances');
 	foreach ($exchanges as $exchange) {
 		updateRawCoinExchange($exchange->name);
@@ -228,37 +226,6 @@ function updateRawCoinExchange($marketname)
 				}
 			}
 		break;
-		case 'bitz':
-			if (!exchange_get('bitz', 'disabled')) {
-				$list = bitz_api_query('tickerall');
-				if (!empty($list)) {
-					dborun("UPDATE markets SET deleted=true WHERE name='bitz'");
-					foreach($list as $c => $ticker) {
-						$e = explode('_', $c);
-						if (strtoupper($e[1]) !== 'BTC')
-							continue;
-						$symbol = strtoupper($e[0]);
-						updateRawCoin('bitz', $symbol);
-					}
-				}
-			}
-		break;
-		case 'bleutrade':
-			if (!exchange_get('bleutrade', 'disabled')) {
-				$list = bleutrade_api_query('public/getcurrencies');
-				if(isset($list->result) && !empty($list->result))
-				{
-					dborun("UPDATE markets SET deleted=true WHERE name='bleutrade'");
-					foreach($list->result as $currency) {
-						if ($currency->Currency == 'BTC') {
-							exchange_set('bleutrade', 'withdraw_fee_btc', $currency->TxFee);
-							continue;
-						}
-						updateRawCoin('bleutrade', $currency->Currency, $currency->CurrencyLong);
-					}
-				}
-			}
-		break;
 		case 'coinbene':
 			if (!exchange_get('coinbene', 'disabled')) {
 				$data = coinbene_api_query('market/symbol');
@@ -315,22 +282,6 @@ function updateRawCoinExchange($marketname)
 						if ($e[0] != 'BTC') continue;
 						$symbol = strtoupper($e[1]);
 						updateRawCoin('coinsmarkets', $symbol);
-					}
-				}
-			}
-		break;
-		case 'cryptrade':
-			if (!exchange_get('cryptrade', 'disabled')) {
-				$list = cryptrade_api_query('tickers');
-				if(is_array($list) && !empty($list))
-				{
-					dborun("UPDATE markets SET deleted=true WHERE name='cryptrade'");
-					foreach($list as $ticker) {
-						$e = explode('_', $ticker->id);
-						if (strtoupper($e[1]) !== 'BTC')
-							continue;
-						$symbol = strtoupper($e[0]);
-						updateRawCoin('cryptrade', $symbol);
 					}
 				}
 			}
@@ -474,7 +425,7 @@ function updateRawCoin($marketname, $symbol, $name='unknown')
 	{
 		$algo = '';
 
-		if (in_array($marketname, array('askcoin','binance','bitz','coinsmarkets','hitbtc'))) {
+		if (in_array($marketname, array('askcoin','binance','coinsmarkets','hitbtc'))) {
 			// don't polute too much the db with new coins, its better from exchanges with labels
 			return;
 		}
