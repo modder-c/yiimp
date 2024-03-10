@@ -16,11 +16,11 @@ void db_check_coin_symbol(YAAMP_DB *db, char* symbol)
 	if (!symbol) return;
 	size_t len = strlen(symbol);
 	if (len >= 2 && len <= 12) {
-#ifdef NO_EXCHANGE
-		db_query(db, "SELECT symbol FROM coins WHERE installed AND algo='%s' AND symbol='%s'", g_stratum_algo, symbol);
-#else
-		db_query(db, "SELECT symbol FROM coins WHERE installed AND (symbol='%s' OR symbol2='%s')", symbol, symbol);
-#endif
+		if (!g_autoexchange)
+			db_query(db, "SELECT symbol FROM coins WHERE installed AND algo='%s' AND symbol='%s'", g_stratum_algo, symbol);
+		else
+			db_query(db, "SELECT symbol FROM coins WHERE installed AND (symbol='%s' OR symbol2='%s')", symbol, symbol);
+
 		MYSQL_RES *result = mysql_store_result(&db->mysql);
 		*symbol = '\0';
 		if (!result) return;

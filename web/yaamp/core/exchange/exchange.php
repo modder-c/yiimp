@@ -28,6 +28,8 @@ require_once("jubi.php");
 require_once("binance.php");
 require_once("hitbtc.php");
 require_once("kucoin.php");
+require_once("xeggex.php");
+require_once("nonkyc.php");
 require_once("tradeogre.php");
 require_once("swiftex.php");
 require_once("unnamed.php");
@@ -81,6 +83,10 @@ function getMarketUrl($coin, $marketName)
 		$url = "https://hitbtc.com/exchange/{$symbol}-to-{$base}";
 	else if($market == 'kucoin')
 		$url = "https://www.kucoin.com/#/trade.pro/{$symbol}-{$base}";
+	else if ($market == 'xeggex')
+		$url = "https://xeggex.com/market/{$symbol}_{$base}";
+	else if ($market == 'nonkyc')
+		$url = "https://nonkyc.io/market/{$symbol}_{$base}";
 	else if($market == 'tradeogre')
 		$url = "https://tradeogre.com/exchange/{$base}-{$symbol}";
 	else if($market == 'yobit')

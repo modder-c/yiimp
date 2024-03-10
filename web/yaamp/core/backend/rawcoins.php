@@ -18,7 +18,7 @@ function updateRawcoins()
 
 	settings_prefetch_all();
 
-	// $markets_name = array('zyrex','p2pb2b','bitmesh','btc-alpha','tradeogre','bibox','coinbene','poloniex','yobit','coinsmarkets','escodex','hitbtc','kraken','binance','gateio','kucoin','shapeshift');
+	// $markets_name = array('p2pb2b','btc-alpha','tradeogre','bibox','poloniex','yobit','coinsmarkets','escodex','hitbtc','kraken','binance','gateio','kucoin','shapeshift');
 	$exchanges = getdbolist('db_balances');
 	foreach ($exchanges as $exchange) {
 		updateRawCoinExchange($exchange->name);
@@ -109,50 +109,6 @@ function updateRawCoinExchange($marketname)
 			}
 		break;
 
-		case 'occe':
-			if (!exchange_get($marketname, 'disabled')) 
-			{
-				$list = occe_api_query('info');
-				// debuglog(json_encode($list->data));
-				if(is_object($list) && !empty($list))
-				{
-					dborun("UPDATE markets SET deleted=true WHERE name='$marketname'");
-					foreach($list->data->coinInfo as $name=>$data) {
-						// debuglog(json_encode($data));
-						$e = explode("_",$data->pair);
-						$base = $e[1];
-						if (strtoupper($base) !== 'BTC')
-							continue;
-						$symbol = strtoupper($e[0]);
-						// debuglog($symbol);
-						updateRawCoin($marketname, $symbol);
-					}
-				}
-			}
-		break;
-		case 'zyrex':
-			// debuglog("Start ZYREX");
-			if (!exchange_get('zyrex', 'disabled')) 
-			{
-				// debuglog("Ok");
-				$list = zyrex_api_query('tickers.json');
-				// debuglog(json_encode($list));
-				if(is_array($list) && !empty($list))
-				{
-					dborun("UPDATE markets SET deleted=true WHERE name='zyrex'");
-					foreach($list as $name=>$data) {
-						// debuglog(json_encode($data));
-						$e[1] = substr($name,-3);
-						$e[0] = substr($name,0,strlen($name)-3);
-						debuglog("$e[1] : $e[0]");
-						if (strtoupper($e[1]) !== 'BTC')
-							continue;
-						$symbol = strtoupper($e[0]);
-						updateRawCoin('zyrex', $symbol);
-					}
-				}
-			}
-		break;
 		case 'p2pb2b':
 			debuglog("Start P2PB2B");
 			if (!exchange_get('p2pb2b', 'disabled')) 
@@ -175,24 +131,6 @@ function updateRawCoinExchange($marketname)
 				}
 			}
 		break;
-		case 'bitmesh':
-			if (!exchange_get('bitmesh', 'disabled')) {
-				$list = bitmesh_api_query('market.ticker');
-				// debuglog(json_encode($list));
-				if(is_object($list) && !empty($list))
-				{
-					dborun("UPDATE markets SET deleted=true WHERE name='bitmesh'");
-					foreach($list->data as $ticker) {
-						// debuglog(json_encode($ticker));
-						$e = explode('_', $ticker->name);
-						if (strtoupper($e[0]) !== 'BTC')
-							continue;
-						$symbol = strtoupper($e[1]);
-						updateRawCoin('bitmesh', $symbol);
-					}
-				}
-			}
-		break;
 		case 'btc-alpha':
 			if (!exchange_get('btc-alpha', 'disabled')) {
 				$list = btcalpha_api_query('ticker');
@@ -209,6 +147,36 @@ function updateRawCoinExchange($marketname)
 				}
 			}
 		break;
+		case 'xeggex':
+			if (!exchange_get('xeggex', 'disabled')) {
+				$list = xeggex_api_query('tickers','','array');
+				if(is_array($list) && !empty($list)) {
+					dborun("UPDATE markets SET deleted=true WHERE name='xeggex'");
+					foreach ($list as $tickers) {
+						$base = strtoupper($tickers['target_currency']);
+						if (strtoupper($base) !== 'BTC'||strtoupper($base) !== 'USDT')
+						$symbol = strtoupper($tickers['base_currency']);
+						updateRawCoin('xeggex', $symbol, $symbol);
+					}
+				}
+			}
+		break;
+	
+		case 'nonkyc':
+		if (!exchange_get('nonkyc', 'disabled')) {
+			$list = nonkyc_api_query('tickers','','array');
+			if(is_array($list) && !empty($list)) {
+				dborun("UPDATE markets SET deleted=true WHERE name='nonkyc'");
+				foreach ($list as $tickers) {
+					$base = strtoupper($tickers['target_currency']);
+					if (strtoupper($base) !== 'BTC'||strtoupper($base) !== 'USDT')
+					$symbol = strtoupper($tickers['base_currency']);
+					updateRawCoin('nonkyc', $symbol, $symbol);
+				}
+			}
+		}
+		break;
+	
 		case 'tradeogre':
 			if (!exchange_get('tradeogre', 'disabled')) {
 				$list = tradeogre_api_query('markets');
@@ -222,20 +190,6 @@ function updateRawCoinExchange($marketname)
 							continue;
 						$symbol = strtoupper($e[1]);
 						updateRawCoin('tradeogre', $symbol);
-					}
-				}
-			}
-		break;
-		case 'coinbene':
-			if (!exchange_get('coinbene', 'disabled')) {
-				$data = coinbene_api_query('market/symbol');
-				$list = objSafeVal($data, 'symbol');
-				if(is_array($list) && !empty($list)) {
-					dborun("UPDATE markets SET deleted=true WHERE name='coinbene'");
-					foreach($list as $ticker) {
-						if ($ticker->quoteAsset != 'BTC') continue;
-						$symbol = $ticker->baseAsset;
-						updateRawCoin('coinbene', $symbol);
 					}
 				}
 			}
@@ -431,7 +385,7 @@ function updateRawCoin($marketname, $symbol, $name='unknown')
 		}
 
 		// some other to ignore...
-		if (in_array($marketname, array('yobit','coinbene','kucoin')))
+		if (in_array($marketname, array('yobit','kucoin')))
 			return;
 
 		if (market_get($marketname, $symbol, "disabled")) {

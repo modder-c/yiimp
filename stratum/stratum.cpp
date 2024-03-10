@@ -278,11 +278,6 @@ int main(int argc, char **argv)
 	sprintf(g_log_directory, "/var/log/yiimp/");
 	initlog(NULL);
 
-#ifdef NO_EXCHANGE
-	// todo: init with a db setting or a yiimp shell command
-	g_autoexchange = false;
-#endif
-
 	char configfile[1024];
 	sprintf(configfile, "%s", argv[1]);
 
@@ -302,6 +297,11 @@ int main(int argc, char **argv)
 	strcpy(g_sql_username, iniparser_getstring(ini, "SQL:username", NULL));
 	strcpy(g_sql_password, iniparser_getstring(ini, "SQL:password", NULL));
 	g_sql_port = iniparser_getint(ini, "SQL:port", 3306);
+
+	if (iniparser_getint(ini, "STRATUM:autoexchange", 1) == 0)
+		g_autoexchange = false;
+	else
+		g_autoexchange = true;
 
 	// optional coin filters (to mine only one on a special port or a test instance)
 	char *coin_filter = iniparser_getstring(ini, "WALLETS:include", NULL);

@@ -83,6 +83,8 @@ define('EXCH_TRADEOGRE_SECRET', '');
 define('EXCH_YOBIT_KEY', '');
 define('EXCH_YOBIT_SECRET', '');
 
+define('EXCH_XEGGEX_KEY', '');
+define('EXCH_XEGGEX_SECRET', '');
 
 // Automatic withdraw to Yaamp btc wallet if btc balance > 0.3
 define('EXCH_AUTO_WITHDRAW', 0.3);

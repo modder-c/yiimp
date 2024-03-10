@@ -106,7 +106,7 @@ function BackendCoinsUpdate()
 				$coin->rpcencoding = 'POW';
 		}
 
-		if($coin->hassubmitblock == NULL)
+		if(is_null($coin->hassubmitblock))
 		{
 			$remote->submitblock('');
 			if(strcasecmp($remote->error, 'method not found') == 0)
@@ -115,7 +115,7 @@ function BackendCoinsUpdate()
 				$coin->hassubmitblock = true;
 		}
 
-		if($coin->auxpow == NULL)
+		if(is_null($coin->auxpow))
 		{
 			$ret = $remote->getauxblock();
 

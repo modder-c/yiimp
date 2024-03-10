@@ -58,13 +58,16 @@ static YAAMP_JOB *job_get_last(int coinid)
 
 void job_send_last(YAAMP_CLIENT *client)
 {
-#ifdef NO_EXCHANGE
-	// prefer user coin first (if available)
-	YAAMP_JOB *job = job_get_last(client->coinid);
+	YAAMP_JOB *job = NULL;
+
+	if (!g_autoexchange)
+	{
+		// prefer user coin first (if available)
+		job = job_get_last(client->coinid);
+	}
+
 	if(!job) job = job_get_last(0);
-#else
-	YAAMP_JOB *job = job_get_last(0);
-#endif
+
 	if(!job) return;
 
 	YAAMP_JOB_TEMPLATE *templ = job->templ;
