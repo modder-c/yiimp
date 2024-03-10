@@ -2,14 +2,15 @@
 
 <h2 align="left"> Container-Environment </h3>
 
-Makefile cointains some helper commands for easier handling
+** important notice: intented for local usage. if you want it to be available on public network you have to add more security rules like firewalling **
+
+info: the Makefile in this repo only cointains some helper commands for easier handling
 
 <h3 align="left"> Requirements </h3>
 
 * Linux
 * Mysql
 * Docker or Podman
-* Memcached
 
 <h3 align="left"> build docker </h3>
 
@@ -23,9 +24,13 @@ or as single command
 
 <h3 align="left"> configuration und run </h3>
 
+* first setup your mysql-database: create a 2 users (one for the web site (php) and one for the stratum connections)
+* if no memcached on system running, start the container internal one
 * the container has only default config built in so you have to link the live-config inside
+* create 2 folders - one for config, 1 for logfiles
+* use the config folder in repo as templates - modify supervisor-conf to your needs (which process to autostart and add stratum-processes if needed)
 * use "serverconfig.sample.php" as config template , rename to serverconfig.php and move config-dir
-* to access logfiles export the log-directory and the apache logfiles
+* to access logfiles export the log-directory and the apache logfiles into the created log-folder
 
 to start container
 
@@ -33,7 +38,7 @@ to start container
 
 or as single command
 
-	podman run --name=yiimp --network=host -v ./config:/etc/yiimp -v ./log:/var/log/apache2 yiimp
+	podman run --name=yiimp --network=host -v ./config:/etc/yiimp ./log:/var/www/log -v ./log:/var/log/yiimp -v ./yiimp/web:/var/www/ -v ./log:/var/log/apache2 -v ./config/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf yiimp
 
 inside the container starts supervisord for controlling the parts of pool altogether
 to start/stop each part head to http://localhost:8900/ or use cli
