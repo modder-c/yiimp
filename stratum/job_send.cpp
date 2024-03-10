@@ -1,5 +1,6 @@
 
 #include "stratum.h"
+#include "humanize_number.h"
 
 static int g_job_next_id = 0;
 
@@ -102,6 +103,8 @@ void job_send_jobid(YAAMP_CLIENT *client, int jobid)
 
 void job_broadcast(YAAMP_JOB *job)
 {
+	char formated_jobspeed[64];
+	char formated_coinspeed[64];
 	int s1 = current_timestamp_dms();
 	int count = 0;
 	struct timeval timeout;
@@ -161,8 +164,14 @@ void job_broadcast(YAAMP_JOB *job)
 	if (templ->nbits && !coin_target) coin_target = 0xFFFF000000000000ULL; // under decode_compact min diff
 	double coin_diff = target_to_diff(coin_target);
 
-	debuglog("%s %d - diff %.9f job %x to %d/%d/%d clients, hash %.3f/%.3f in %.1f ms\n", job->name,
-		templ->height, coin_diff, job->id, count, job->count, g_list_client.count, job->speed, job->maxspeed, 0.1*(s2-s1));
+	// hotfix: shift speed by 1000000 - given in MHs , until speedcalc has been fixed
+	humanize_double(formated_jobspeed, sizeof("-XXX.YPh/s"), job->speed*1000000, "h/s",
+					HN_AUTOSCALE, HN_NOSPACE | HN_DECIMAL);
+	humanize_double(formated_coinspeed, sizeof("-XXX.YPh/s"), job->maxspeed*1000000, "h/s",
+					HN_AUTOSCALE, HN_NOSPACE | HN_DECIMAL);
+
+	debuglog("%s %d - diff %.9f job %x to %d/%d/%d clients, hash %s / %s in %.1f ms\n", job->name,
+		templ->height, coin_diff, job->id, count, job->count, g_list_client.count, formated_jobspeed, formated_coinspeed, 0.1*(s2-s1));
 
 //	for(int i=0; i<templ->auxs_size; i++)
 //	{
