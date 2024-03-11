@@ -430,6 +430,13 @@ int main(int argc, char **argv)
 		object_prune(&g_list_worker, worker_delete);
 		object_prune(&g_list_share, share_delete);
 		object_prune(&g_list_submit, submit_delete);
+		debuglog("coin %i job %i cli %i block %i work %i share %i\n",
+					g_list_coind.count, g_list_job.count,
+					g_list_client.count, g_list_block.count,
+					g_list_worker.count, g_list_share.count);
+		if ( g_list_coind.count < g_list_job.count ) {
+			job_log_statistic();
+		}
 
 		if (!g_exiting) sleep(20);
 	}

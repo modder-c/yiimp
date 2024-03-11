@@ -5,8 +5,30 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void cbin2hex(char *out, const char *in, size_t len)
+{
+	if (out) {
+		unsigned int i;
+		for (i = 0; i < len; i++)
+			sprintf(out + (i * 2), "%02x", (uint8_t)in[i]);
+	}
+}
+
+char *bin2hex(const uchar *in, size_t len)
+{
+	char *s = (char*)malloc((len * 2) + 1);
+	if (!s)
+		return NULL;
+
+	cbin2hex(s, (const char *) in, len);
+
+	return s;
+}
+
 bool json_get_bool(json_value *json, const char *name)
 {
+	if (!json) return false;
+
 	for(int i=0; i<json->u.object.length; i++)
 	{
 		if(!strcmp(json->u.object.values[i].name, name))
@@ -18,6 +40,8 @@ bool json_get_bool(json_value *json, const char *name)
 
 json_int_t json_get_int(json_value *json, const char *name)
 {
+	if (!json) return 0;
+
 	for(int i=0; i<json->u.object.length; i++)
 	{
 		if(!strcmp(json->u.object.values[i].name, name))
@@ -29,6 +53,8 @@ json_int_t json_get_int(json_value *json, const char *name)
 
 double json_get_double(json_value *json, const char *name)
 {
+	if (!json) return 0;
+
 	for(int i=0; i<json->u.object.length; i++)
 	{
 		if(!strcmp(json->u.object.values[i].name, name))
@@ -40,6 +66,8 @@ double json_get_double(json_value *json, const char *name)
 
 const char *json_get_string(json_value *json, const char *name)
 {
+	if (!json) return NULL;
+
 	for(int i=0; i<json->u.object.length; i++)
 	{
 		if(!strcmp(json->u.object.values[i].name, name))
@@ -51,6 +79,8 @@ const char *json_get_string(json_value *json, const char *name)
 
 json_value *json_get_array(json_value *json, const char *name)
 {
+	if (!json) return NULL;
+
 	for(int i=0; i<json->u.object.length; i++)
 	{
 //		if(json->u.object.values[i].value->type == json_array && !strcmp(json->u.object.values[i].name, name))
@@ -74,6 +104,8 @@ json_value *json_get_array(json_value *json, const char *name)
 
 json_value *json_get_object(json_value *json, const char *name)
 {
+	if (!json) return NULL;
+
 	for(int i=0; i<json->u.object.length; i++)
 	{
 		if(!strcmp(json->u.object.values[i].name, name))
@@ -437,6 +469,9 @@ unsigned char binvalue(const char v)
 
 	if(v >= 'a' && v <= 'f')
 		return v-'a'+10;
+
+	if(v >= 'A' && v <= 'F')
+		return v-'A'+10;
 
 	return 0;
 }

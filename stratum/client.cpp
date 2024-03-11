@@ -333,13 +333,21 @@ bool client_update_block(YAAMP_CLIENT *client, json_value *json_params)
 	coind_create_job(coind);
 	object_unlock(coind);
 
-	if(coind->isaux) for(CLI li = g_list_coind.first; li; li = li->next)
+	if(coind->isaux)
 	{
-		YAAMP_COIND *coind = (YAAMP_COIND *)li->data;
-		if(!coind_can_mine(coind)) continue;
-		if(coind->pos) continue;
+		/*  only update job for DOGE ,
+			other coins ignore intermediate updates to avoid fast job re-issue	*/
+		if (strcmp(coind->symbol, "DOGE") == 0)
+		{
+			for(CLI li = g_list_coind.first; li; li = li->next)
+			{
+				YAAMP_COIND *coind = (YAAMP_COIND *)li->data;
+				if(!coind_can_mine(coind)) continue;
+				if(coind->pos) continue;
 
-		coind_create_job(coind);
+				coind_create_job(coind);
+			}
+		}
 	}
 
 	job_signal();
@@ -670,8 +678,7 @@ void *client_thread(void *p)
 		object_delete(client);
 	} else {
 		// only clients sockets in g_list_client are purged (if marked deleted)
-		socket_close(client->sock);
-		delete client;
+		client_delete(client);
 	}
 
 	pthread_exit(NULL);

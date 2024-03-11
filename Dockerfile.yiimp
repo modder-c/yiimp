@@ -4,26 +4,22 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN set -xe \
     && : "---------- Fix possible vulnerabilities ----------" \
-    && apt-get update && apt-get dist-upgrade -y
-RUN set -xe \
+    && apt-get update && apt-get dist-upgrade -y \
     && : "---------- add tools ----------" \
-    && apt-get install -y git dumb-init supervisor cron logrotate vim less nano mc memcached haproxy
-RUN set -xe \
+    && apt-get install -y git dumb-init supervisor cron logrotate vim less nano mc memcached haproxy \
     && : "---------- add build-tools ----------" \
-    && apt-get install -y automake autotools-dev build-essential libtool
-RUN set -xe \
+    && apt-get install -y automake autotools-dev build-essential libtool libasan6 \
     && : "---------- Persistent dependencies ----------" \
-    && apt-get install -y libgd-dev libicu-dev libmariadb-dev-compat libxml2-dev libonig-dev libcurl4-openssl-dev libssl-dev libxslt1-dev libzip-dev libz-dev libmemcached-dev libgmp-dev
-RUN set -xe \
+    && apt-get install -y libgd-dev libicu-dev libmariadb-dev-compat libxml2-dev libonig-dev libcurl4-openssl-dev libssl-dev libxslt1-dev libzip-dev libz-dev libmemcached-dev libgmp-dev \
     && : "---------- php extensions ----------" \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) bcmath curl exif gd intl opcache pcntl mysqli pdo_mysql soap shmop sysvshm sysvsem sysvmsg xml xsl zip
-RUN pecl install memcache && docker-php-ext-enable memcache
+    && docker-php-ext-install -j$(nproc) bcmath curl exif gd intl opcache pcntl mysqli pdo_mysql soap shmop sysvshm sysvsem sysvmsg xml xsl zip \
+    && pecl install memcache && docker-php-ext-enable memcache \
+    && apt-get clean
 
 RUN set -xe \
     && : "---------- Copy config ----------" \
-    && mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
-RUN set -xe \
+    && mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
     && : "---------- Modify apache config ----------" \
     && a2enmod rewrite
 

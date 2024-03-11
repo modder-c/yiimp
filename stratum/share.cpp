@@ -99,7 +99,7 @@ void share_add(YAAMP_CLIENT *client, YAAMP_JOB *job, bool valid, char *extranonc
 	strcpy(share->nonce, nonce);
 	strcpy(share->nonce1, client->extranonce1);
 
-	g_list_share.AddTail(share);
+	g_list_share.AddHead(share);
 }
 
 YAAMP_SHARE *share_find(int jobid, char *extranonce2, char *ntime, char *nonce, char *nonce1)

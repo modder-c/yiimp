@@ -130,7 +130,7 @@ void *job_thread(void *p);
 void job_signal();
 void job_update();
 void job_init();
-
+void job_log_statistic();
 
 void coinbase_create(YAAMP_COIND *coind, YAAMP_JOB_TEMPLATE *templ, json_value *json_result);
 

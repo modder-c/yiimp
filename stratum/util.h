@@ -73,6 +73,10 @@ string merkle_with_first(vector<string> steps, string f);
 
 //////////////////////////////////////////////////////////////////////////
 
+typedef unsigned char uchar;
+void cbin2hex(char *out, const char *in, size_t len);
+char *bin2hex(const uchar *in, size_t len);
+
 bool base58_decode(const char *input, char *output);
 bool is_base58(char *input);
 

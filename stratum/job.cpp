@@ -341,10 +341,24 @@ void job_update()
 
 }
 
+void job_log_statistic()
+{
+	int count_locked_deleted = 0;
+	g_list_job.Enter();
 
+	for(CLI li = g_list_job.first; li; li = li->next)
+	{
+		YAAMP_JOB *job = (YAAMP_JOB *)li->data;
+		if (!job) continue;
 
+		if ((job->deleted) && (job->lock_count)) {
+			count_locked_deleted++;
+			job->lock_count = 0;
+		}
+	}
 
+	if (count_locked_deleted > 0)
+		debuglog("job_log_statistic %d orphan jobs\n", count_locked_deleted);
+	g_list_job.Leave();
 
-
-
-
+}
