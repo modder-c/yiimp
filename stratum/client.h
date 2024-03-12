@@ -62,6 +62,9 @@ public:
 	char password[1024];
 	char worker[1024];
 
+	std::vector<std::string> coins_mining_list;
+	std::vector<std::string> coins_ignore_list;
+
 	double difficulty_actual;
 	double difficulty_remote;
 	double difficulty_written;

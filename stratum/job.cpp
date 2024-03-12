@@ -14,14 +14,29 @@ static bool job_assign_client(YAAMP_JOB *job, YAAMP_CLIENT *client, double maxha
 {
 	RETURN_ON_CONDITION(client->deleted, true);
 	RETURN_ON_CONDITION(client->jobid_next, true);
+	RETURN_ON_CONDITION(job->coind->mining_disabled, true);
 	RETURN_ON_CONDITION(client->jobid_locked && client->jobid_locked != job->id, true);
 	RETURN_ON_CONDITION(client_find_job_history(client, job->id), true);
 	RETURN_ON_CONDITION(maxhash > 0 && job->speed + client->speed > maxhash, true);
+
+	bool specific_mining = (client->coins_mining_list.size() > 0 );
+	bool coin_to_mine = (std::find(client->coins_mining_list.begin(), client->coins_mining_list.end(), job->coind->symbol) != client->coins_mining_list.end()) ||
+						(std::find(client->coins_mining_list.begin(), client->coins_mining_list.end(), job->coind->symbol2) != client->coins_mining_list.end());
+	bool coin_to_ignore = (std::find(client->coins_ignore_list.begin(), client->coins_ignore_list.end(), job->coind->symbol) != client->coins_ignore_list.end()) ||
+						  (std::find(client->coins_ignore_list.begin(), client->coins_ignore_list.end(), job->coind->symbol2) != client->coins_ignore_list.end());
 
 	if(!g_autoexchange && maxhash >= 0. && client->coinid != job->coind->id) {
 		//debuglog("prevent client %c on %s, not the right coin\n",
 		//	client->username[0], job->coind->symbol);
 		return true;
+	}
+
+	if (coin_to_ignore) {
+		return true;
+	}
+
+	if ( maxhash >= 0. ) {
+		if (( specific_mining ) && (!coin_to_mine)) return true;
 	}
 
 	if(job->remote)

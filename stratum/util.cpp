@@ -802,6 +802,20 @@ void string_upper(char *s)
 	  s[i] = toupper(s[i]);
 }
 
+int string_tokenize(std::string const &input_string, const char delimiter, std::vector<std::string> &string_array) {
+    size_t start;
+    size_t end = 0;
+    int parts_counter = 0;
+
+    while ((start = input_string.find_first_not_of(delimiter, end)) != std::string::npos)
+    {
+        end = input_string.find(delimiter, start);
+        string_array.push_back(input_string.substr(start, end - start));
+        parts_counter++;
+    }
+
+    return parts_counter;
+}
 
 //////////////////////////////////////////////////////////////////////////////////////
 

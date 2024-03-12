@@ -62,6 +62,7 @@ public:
 
 	bool isaux;
 	YAAMP_COIND_AUX aux;
+	bool mining_disabled;
 
 	int notreportingcounter;
 	bool usegetwork;

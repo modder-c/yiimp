@@ -20,6 +20,7 @@
 #include <errmsg.h>
 #include <ifaddrs.h>
 #include <dirent.h>
+#include <algorithm>
 
 #include <iostream>
 #include <vector>

@@ -116,6 +116,7 @@ int resident_size();
 
 void string_lower(char *s);
 void string_upper(char *s);
+int string_tokenize(std::string const &input_string, const char delimiter, std::vector<std::string> &string_array);
 
 int getblocheight(const char *coinb1);
 

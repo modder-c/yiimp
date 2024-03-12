@@ -309,6 +309,13 @@ YAAMP_JOB_TEMPLATE *coind_create_template(YAAMP_COIND *coind)
 	strcpy(templ->flags, flags ? flags : "");
 	strcpy(templ->priceinfo, "");
 
+	// disable coin on next template on gbt-flag
+	coind->mining_disabled = json_get_bool(json_result, "mining_disabled");
+
+	if (coind->mining_disabled) {
+		debuglog("mining disabled for next block on %s\n",coind->symbol);
+	}
+
 	// LBC Claim Tree (with wallet gbt patch)
 	const char *claim = json_get_string(json_result, "claimtrie");
 	if (claim) {
