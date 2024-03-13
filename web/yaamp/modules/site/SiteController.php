@@ -4,30 +4,6 @@ class SiteController extends CommonController
 {
 	public $defaultAction='index';
 
-	///////////////////////////////////////////////////
-	// Security Note: You can rename this action as you
-	// want, to customize the admin entrance url...
-	//
-	public function actionmyadmin()
-	{
-		$client_ip = arraySafeVal($_SERVER,'REMOTE_ADDR');
-		$valid = isAdminIP($client_ip);
-
-		if (arraySafeVal($_SERVER,'HTTP_X_FORWARDED_FOR','') != '') {
-			debuglog("admin access attempt via IP spoofing!");
-			$valid = false;
-		}
-
-		if ($valid)
-			debuglog("admin connect from $client_ip");
-		else
-			debuglog("admin connect failure from $client_ip");
-
-		user()->setState('yaamp_admin', $valid);
-
-		$this->redirect("/site/common");
-	}
-
 	/////////////////////////////////////////////////
 
 	public function actionCreate()
