@@ -366,6 +366,21 @@ function updateRawCoinExchange($marketname)
 				}
 			}
 		break;
+		case 'graviex':
+			if (!exchange_get('graviex', 'disabled')) {
+				$list = graviex_api_query('markets');
+				if(is_array($list) && !empty($list))
+				{
+					dborun("UPDATE markets SET deleted=true WHERE name='graviex'");
+					foreach ($list as $currency) {
+						$e = explode('/', $currency->name);
+						$symbol = strtoupper($e[0]); $base = strtoupper($e[1]);
+						$name = $symbol;
+						updateRawCoin('graviex', $symbol, $name);
+					}
+				}
+			}
+		break;
 	}
 	debuglog("==== END Exchange ====");
 }
