@@ -3,6 +3,10 @@
 #include <mysql/mysqld_error.h>
 #include <signal.h>
 
+#ifndef ER_LOCK_DEADLOCK
+#define ER_LOCK_DEADLOCK	1213
+#endif
+
 void db_reconnect(YAAMP_DB *db)
 {
 	if (g_exiting) {
@@ -80,6 +84,7 @@ void db_query(YAAMP_DB *db, const char *format, ...)
 	int len = vsprintf(buffer, format, arglist);
 	va_end(arglist);
 
+	int max_retries = 5;
 	while(!g_exiting)
 	{
 		int res = mysql_query(&db->mysql, buffer);
@@ -88,10 +93,16 @@ void db_query(YAAMP_DB *db, const char *format, ...)
 
 		stratumlog("SQL ERROR: %d, %s\n", res, mysql_error(&db->mysql));
 		if(res == ER_DUP_ENTRY) break; // rarely seen on new user creation
-		if(res != CR_SERVER_GONE_ERROR && res != CR_SERVER_LOST) exit(1);
+		if(res != CR_SERVER_GONE_ERROR && res != CR_SERVER_LOST && res != ER_LOCK_DEADLOCK) exit(1);
 
 		usleep(100*YAAMP_MS);
-		db_reconnect(db);
+
+		max_retries--;
+		if (!max_retries) exit(1);
+
+		if ((res == CR_SERVER_GONE_ERROR) || (res == CR_SERVER_LOST)) {
+			db_reconnect(db);
+		}
 	}
 
 	free(buffer);
