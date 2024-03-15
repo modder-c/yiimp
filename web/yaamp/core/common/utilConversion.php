@@ -97,9 +97,10 @@ function GetMonthString($n)
 	return date("F", $timestamp);
 }
 
-function bitcoinvaluetoa($v)
+function bitcoinvaluetoa($v, $precision = 8)
 {
-	return sprintf('%.8f', round($v, 8, PHP_ROUND_HALF_DOWN));
+	$format_string = '%.'.$precision.'f';
+	return sprintf($format_string, round($v, $precision, PHP_ROUND_HALF_DOWN));
 }
 
 function mbitcoinvaluetoa($v)

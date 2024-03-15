@@ -24,47 +24,57 @@ function xeggex_api_user($method, $url_params = [], $request_method='GET', $retu
 	
 	if (empty(EXCH_XEGGEX_KEY) || empty(EXCH_XEGGEX_SECRET)) return false;
 
-	$epoch_time = (time() + $timedrift).rand(100,999); # tonce should be different from previous one
+	$nonce = (time() + $timedrift).rand(100,999); # tonce should be different from previous one
 	
-	$base = 'https://api.xeggex.com';
-	$path = '/api/v2/'.$method; $request = '';
+	$base = 'https://api.xeggex.com'; $path = '/api/v2/'.$method;
+
+	$request = '';
 
 	if (is_array($url_params)) {
-		$url_params['access_key'] = EXCH_XEGGEX_KEY;
-		$url_params['tonce'] = $epoch_time;
 		ksort($url_params);
 		$request = http_build_query($url_params, '', '&');
 	} elseif (is_string($url_params)) {
-		$request = 'access_key=' . EXCH_XEGGEX_KEY . $url_params. '&tonce=' . $epoch_time;;
+		$request = $url_params;
 	}
 
-	$http_verb = ($request_method == 'POST')?"POST":"GET";
-	
-	$message = $http_verb."|".$path."|".$request ;
-	$sign = hash_hmac('sha256', $message, EXCH_XEGGEX_SECRET);
-
-	if ($http_verb == 'POST') {
+	$payload = '';
+	if ($request_method == 'POST') {
 		$uri = $base.$path;
+		$payload = $request;
 	}
 	else {
-		$uri = $base.$path.'?'.$request.'&signature='.$sign;
+		if ($request != '')
+			$uri = $base.$path.'?'.$request;
+		else
+			$uri = $base.$path;
 	}
 
-	$httprequest = new cHTTP();
-	$httprequest->setURL($uri);
-	
-	if ($http_verb == 'POST') {
-		$httprequest->setPostfields($request.'&signature='.$sign);
+	$message = EXCH_XEGGEX_KEY.$uri.$payload. $nonce;
+	$signature = hash_hmac('sha256', $message, EXCH_XEGGEX_SECRET);
+	// debuglog('xeggex-api: '.var_export($message, true));
+	$http_headers = [
+				'Content-Type: application/json',
+				'X-API-KEY: '.EXCH_XEGGEX_KEY,
+				'X-API-NONCE: '.$nonce,
+				'X-API-SIGN: '.$signature
+	];
+
+	$http_request = new cHTTP();
+	$http_request->setURL($uri);
+	$http_request->setHeaders($http_headers);
+
+	if ($request_method == 'POST') {
+		$http_request->setPostfields($payload);
 	}
-	$httprequest->setUserAgentString('Mozilla/4.0 (compatible; xeggex API client; '.php_uname('s').'; PHP/'.PHP_MAJOR_VERSION.'.'.PHP_MINOR_VERSION.')');
-	$httprequest->setFailOnError(false);
-	$data = $httprequest->execRequest();
+	$http_request->setUserAgentString('Mozilla/4.0 (compatible; xeggex API client; '.php_uname('s').'; PHP/'.PHP_MAJOR_VERSION.'.'.PHP_MINOR_VERSION.')');
+	$http_request->setFailOnError(false);
+	$data = $http_request->execRequest();
 	if ($returnType == 'object')
 		$res = json_decode($data);
 	else
 		$res = json_decode($data,true);
 	
-	$status = $httprequest->fResult['HTTP_Code'];
+	$status = $http_request->fResult['HTTP_Code'];
 	
 	if($status >= 300) {
 		debuglog("xeggex: $method failed ($status) ".strip_data($data));
@@ -75,4 +85,3 @@ function xeggex_api_user($method, $url_params = [], $request_method='GET', $retu
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-?>

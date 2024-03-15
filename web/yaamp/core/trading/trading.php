@@ -7,7 +7,7 @@ require_once('yobit_trading.php');
 require_once('hitbtc_trading.php');
 require_once('kucoin_trading.php');
 require_once('graviex_trading.php');
-
+require_once('xeggex_trading.php');
 
 function cancelExchangeOrder($order=false)
 {
@@ -29,7 +29,10 @@ function cancelExchangeOrder($order=false)
 			case 'graviex':
 				doGraviexCancelOrder($order->uuid);
 				break;
-		}
+			case 'xeggex':
+				doXeggexCancelOrder($order->uuid);
+				break;
+			}
 }
 
 function runExchange($exchangeName=false)
@@ -85,7 +88,12 @@ function runExchange($exchangeName=false)
 				doGraviexTrading(true);
 				updateGraviexMarkets();
 				break;
-				
+
+			case 'xeggex':
+				doXeggexTrading(true);
+				//updateXeggexMarkets();
+				break;
+	
 			default:
 				debuglog(__FUNCTION__.' '.$exchangeName.' not implemented');
 		}
