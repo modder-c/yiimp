@@ -226,6 +226,7 @@ void db_update_coinds(YAAMP_DB *db)
 			coind->newcoind = true;
 			coind->newblock = true;
 			coind->id = atoi(row[0]);
+			yaamp_create_mutex(&coind->aux_mutex);
 			coind->aux.coind = coind;
 					   }
 		   else

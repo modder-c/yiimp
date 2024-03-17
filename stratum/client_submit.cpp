@@ -178,11 +178,17 @@ static void client_do_submit(YAAMP_CLIENT *client, YAAMP_JOB *job, YAAMP_JOB_VAL
 		if(!coind_aux || !strcmp(coind->symbol, coind_aux->symbol2))
 			continue;
 
+		CommonLock(&coind_aux->aux_mutex);
+
+
+		YAAMP_COIND_AUX *current_aux;
+		current_aux = templ->auxs[i];
+
 		unsigned char target_aux[1024];
-		binlify(target_aux, coind_aux->aux.target);
+		binlify(target_aux, current_aux->target);
 
 		uint64_t coin_target_aux = get_hash_difficulty(target_aux);
-		if(hash_int <= coin_target_aux)
+		if ((hash_int <= coin_target_aux) && (!current_aux->skip_submitblock))
 		{
 			memset(block_hex, 0, block_size);
 
@@ -201,30 +207,34 @@ static void client_do_submit(YAAMP_CLIENT *client, YAAMP_JOB *job, YAAMP_JOB_VAL
 
 			////////////////////////////////////////////////// auxs merkle steps
 
-			vector<string> lresult = coind_aux_merkle_branch(templ->auxs, templ->auxs_size, coind_aux->aux.index);
+			vector<string> lresult = coind_aux_merkle_branch(templ->auxs, templ->auxs_size, current_aux->index);
 			sprintf(block_hex+strlen(block_hex), "%02x", (unsigned char)lresult.size());
 
 			for(i = lresult.begin(); i != lresult.end(); ++i)
 				sprintf(block_hex+strlen(block_hex), "%s", (*i).c_str());
 
-			sprintf(block_hex+strlen(block_hex), "%02x000000", (unsigned char)coind_aux->aux.index);
+			sprintf(block_hex+strlen(block_hex), "%02x000000", (unsigned char)current_aux->index);
 
 			////////////////////////////////////////////////// parent header
 
 			strcat(block_hex, submitvalues->header_be);
 
-			bool b = coind_submitgetauxblock(coind_aux, coind_aux->aux.hash, block_hex);
+			bool b = coind_submitgetauxblock(coind_aux, current_aux->hash, block_hex);
 			if(b)
 			{
 				debuglog("*** ACCEPTED %s %d (+1)\n", coind_aux->name, coind_aux->height);
 
 				block_add(client->userid, client->workerid, coind_aux->id, coind_aux->height, target_to_diff(coin_target_aux),
-					target_to_diff(hash_int), coind_aux->aux.hash, "", 0);
+					target_to_diff(hash_int), current_aux->hash, "", 0);
 			}
 
 			else
 				debuglog("%s %d REJECTED\n", coind_aux->name, coind_aux->height);
+
+			// tag block as submitted
+			current_aux->skip_submitblock = true;
 		}
+		CommonUnlock(&coind_aux->aux_mutex);
 	}
 
 	if(hash_int <= coin_target)

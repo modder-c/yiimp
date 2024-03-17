@@ -9,6 +9,8 @@ struct YAAMP_COIND_AUX
 
 	char hash[1024];
 	char target[1024];
+
+	bool skip_submitblock;
 };
 
 class YAAMP_COIND: public YAAMP_OBJECT
@@ -20,9 +22,7 @@ public:
 	YAAMP_RPC rpc;
 	char rpcencoding[32];
 
-//	pthread_t thread;
 	pthread_mutex_t mutex;
-//	pthread_cond_t cond;
 
 //	bool closing;
 
@@ -61,6 +61,7 @@ public:
 	int actual_ttf;
 
 	bool isaux;
+	pthread_mutex_t aux_mutex;
 	YAAMP_COIND_AUX aux;
 	bool mining_disabled;
 

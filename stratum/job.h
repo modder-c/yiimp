@@ -67,7 +67,7 @@ struct YAAMP_JOB_TEMPLATE
 	int filtered_txs_fee;
 
 	int auxs_size;
-	YAAMP_COIND_AUX *auxs[MAX_AUXS];
+	YAAMP_COIND_AUX *auxs[MAX_AUXS * 32];
 	
 	bool needpriceinfo;
 	char priceinfo[1024];	
@@ -101,9 +101,17 @@ inline void job_delete(YAAMP_OBJECT *object)
 {
 	YAAMP_JOB *job = (YAAMP_JOB *)object;
 	if (!job) return;
-	if (job->templ && job->templ->txcount) {
-		job->templ->txsteps.clear();
-		job->templ->txdata.clear();
+	if (job->templ) {
+		for(int i=0; i<job->templ->auxs_size; i++) {
+			if (job->templ->auxs[i]) {
+				free(job->templ->auxs[i]); job->templ->auxs[i] = NULL;
+			}
+		}
+
+		if (job->templ->txcount) {
+			job->templ->txsteps.clear();
+			job->templ->txdata.clear();
+		}
 	}
 	if (job->templ) delete job->templ;
 	delete job;

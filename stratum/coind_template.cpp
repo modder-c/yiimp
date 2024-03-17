@@ -5,29 +5,53 @@ void coind_getauxblock(YAAMP_COIND *coind)
 {
 	if(!coind->isaux) return;
 
-	json_value *json = rpc_call(&coind->rpc, "getauxblock", "[]");
-	if(!json)
-	{
-		coind_error(coind, "coind_getauxblock");
-		return;
+	json_value *json = NULL;
+	if((strcmp(coind->symbol, "XMY") == 0) ||
+	   (strcmp(coind->symbol2, "XMY") == 0) ||
+       (strcmp(coind->symbol, "QBC") == 0) ||
+       (strcmp(coind->symbol2, "QBC") == 0) ||
+	   (strcmp(coind->symbol, "EAC") == 0)) {
+		static char wallet_address[1028];
+		if (coind->wallet) sprintf(wallet_address, "[\"%s\"]", coind->wallet);
+
+		json = rpc_call(&coind->rpc, "createauxblock", wallet_address);
+		if(!json)
+		{
+			coind_error(coind, "coind_createauxblock");
+			return;
+		}
+	}
+	else {
+		json = rpc_call(&coind->rpc, "getauxblock", "[]");
+		if(!json)
+		{
+			coind_error(coind, "coind_getauxblock");
+			return;
+		}
 	}
 
 	json_value *json_result = json_get_object(json, "result");
 	if(!json_result)
 	{
+		json_value_free(json);
 		coind_error(coind, "coind_getauxblock");
 		return;
 	}
 
+	CommonLock(&coind->aux_mutex);
 //	coind->aux.height = coind->height+1;
 	coind->aux.chainid = json_get_int(json_result, "chainid");
 
 	const char *p = json_get_string(json_result, "target");
+	if (!p) p = json_get_string(json_result, "_target");
 	if(p) strcpy(coind->aux.target, p);
 
 	p = json_get_string(json_result, "hash");
 	if(p) strcpy(coind->aux.hash, p);
 
+	coind->aux.skip_submitblock = json_get_bool(json_result, "mining_disabled");
+
+	CommonUnlock(&coind->aux_mutex);
 //	if(strcmp(coind->symbol, "UNO") == 0)
 //	{
 //		string_be1(coind->aux.target);
