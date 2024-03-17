@@ -5,6 +5,10 @@ class YAAMP_REMOTE;
 class YAAMP_COIND;
 class YAAMP_COIND_AUX;
 
+#define JOB_STATUS_DELETE	0
+#define JOB_STATUS_ACTIVE	1
+#define JOB_STATUS_WAITING	2
+
 struct YAAMP_JOB_VALUES
 {
 	char coinbase[4*1024];
@@ -87,6 +91,9 @@ public:
 	YAAMP_REMOTE *remote;
 	YAAMP_JOB_TEMPLATE *templ;
 
+	int status;
+	time_t jobage;
+
 	bool remote_subids[YAAMP_JOB_MAXSUBIDS];
 };
 
@@ -114,6 +121,7 @@ void job_assign_locked_clients(YAAMP_JOB *job);
 bool job_can_mine(YAAMP_JOB *job);
 void job_reset_clients(YAAMP_JOB *job=NULL);
 bool job_has_free_client();
+void job_check_status();
 
 //YAAMP_JOB_TEMPLATE *job_create_template(YAAMP_COIND *coind);
 //void job_create_last(YAAMP_COIND *coind, bool force=false);

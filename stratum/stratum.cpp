@@ -421,6 +421,7 @@ int main(int argc, char **argv)
 		////////////////////////////////////
 
 //		source_prune();
+		job_check_status();
 
 		object_prune(&g_list_coind, coind_delete);
 		object_prune(&g_list_remote, remote_delete);

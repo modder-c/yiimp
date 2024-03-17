@@ -588,10 +588,18 @@ bool coind_create_job(YAAMP_COIND *coind, bool force)
 
 	////////////////////////////////////////////////////////////////////////////////////////
 
-	object_delete(coind->job);
+	if (job_last && job_last->templ && (templ->height == job_last->templ->height)) {
+		if (coind->job) coind->job->status = JOB_STATUS_WAITING;
+	}
+	else {
+		object_delete(coind->job);
+	}
 
 	coind->job = new YAAMP_JOB;
 	memset(coind->job, 0, sizeof(YAAMP_JOB));
+
+	coind->job->status = JOB_STATUS_ACTIVE;
+	coind->job->jobage = time(NULL);
 
 	sprintf(coind->job->name, "%s", coind->symbol);
 
@@ -612,18 +620,3 @@ bool coind_create_job(YAAMP_COIND *coind, bool force)
 
 	return true;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
