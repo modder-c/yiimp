@@ -226,7 +226,7 @@ echo '<td><b><a href="/site/block?id=' . $coin->id . '">' . $coin->name . '</a><
 echo '<td width="60"><b>' . $coin->symbol . '</b></td>';
 echo '<td><a href="/site/gomining?algo=' . $coin->algo . '">' . $coin->algo . '</a></td>';
 
-if (!$info) {
+if (!$info || !isset($info['balance']) ) {
     echo '<td colspan="5">ERROR ' . $remote->error . '</td>';
     echo '<td>' . bitcoinvaluetoa($coin->price) . '</td>';
     echo '<td colspan="2">';
