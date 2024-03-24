@@ -212,6 +212,13 @@ class CronjobController extends CommonController
 	//	BackendOptimizeTables();
 		debuglog('payments sequence done');
 	}
+	
+	// only for testing
+	public function actionTestfunction()
+	{
+	    set_time_limit(0);
+	    updateGraviexMarkets();
+	}
 
 }
 

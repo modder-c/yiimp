@@ -91,7 +91,7 @@ function runExchange($exchangeName=false)
 
 			case 'xeggex':
 				doXeggexTrading(true);
-				//updateXeggexMarkets();
+				updateXeggexMarkets();
 				break;
 	
 			default:

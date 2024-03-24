@@ -859,7 +859,7 @@ function updateGraviexMarkets($force = false)
 	$list = getdbolist('db_markets', "name LIKE '$exchange%'");
 	if (empty($list)) return;
 
-	$markets = graviex_api_query('tickers');
+	$markets = graviex_api_query('tickers','','array');
 	if(!is_array($markets)) return;
 
 	foreach($list as $market)
@@ -876,7 +876,12 @@ function updateGraviexMarkets($force = false)
 		}
 
 		$symbol = strtolower($symbol);
+
 		$dbpair = $symbol.'btc';
+		if (!empty($market->base_coin)) {
+			$dbpair = strtolower($symbol.$market->base_coin);
+		}
+
 		foreach ($markets as $pair => $ticker) {
 			if ($pair != $dbpair) continue;
 			$price2 = ($ticker['ticker']['buy']+$ticker['ticker']['sell'])/2;
