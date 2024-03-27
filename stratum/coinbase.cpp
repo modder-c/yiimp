@@ -14,6 +14,24 @@ static void encode_tx_value(char *encoded, json_int_t value)
 		TX_VALUE(value, 32), TX_VALUE(value, 40), TX_VALUE(value, 48), TX_VALUE(value, 56));
 }
 
+static void p2wpkh_pack_tx(YAAMP_COIND *coind, char *data, json_int_t amount, char *payee, bool add_witness = false)
+{
+	char evalue[32];
+	char payee_len[4];
+
+	encode_tx_value(evalue, amount);
+	sprintf(payee_len, "%02x", (unsigned int)(strlen(payee) >> 1) & 0xFF);
+
+	strcat(data, evalue);
+	strcat(data, payee_len);
+	strcat(data, payee);
+
+	if (add_witness) {
+		// add for segwit txs count =1, length = 32, witness '00..00'
+		strcat(data, "01200000000000000000000000000000000000000000000000000000000000000000");
+	}
+}
+ 
 static void p2sh_pack_tx(YAAMP_COIND *coind, char *data, json_int_t amount, char *payee)
 {
 	char evalue[32];
@@ -40,10 +58,15 @@ static void script_pack_tx(YAAMP_COIND *coind, char *data, json_int_t amount, co
 	strcat(data, coinb2_part);
 }
 
-static void job_pack_tx(YAAMP_COIND *coind, char *data, json_int_t amount, char *key)
+static void job_pack_tx(YAAMP_COIND *coind, char *data, json_int_t amount, char *key, bool add_witness = false)
 {
 	int ol = strlen(data);
 	char evalue[32];
+
+	if(coind->p2wpkh) {
+		p2wpkh_pack_tx(coind, data, amount, coind->script_pubkey, add_witness);
+		return;
+	}
 
 	if(coind->p2sh_address && !key) {
 		p2sh_pack_tx(coind, data, amount, coind->script_pubkey);
@@ -167,6 +190,13 @@ void coinbase_create(YAAMP_COIND *coind, YAAMP_JOB_TEMPLATE *templ, json_value *
 	sprintf(templ->coinb1, "%s%s01"
 		"0000000000000000000000000000000000000000000000000000000000000000"
 		"ffffffff%02x%s", eversion1, entime, script_len, script1);
+	
+	if (coind->p2wpkh) {
+		sprintf(templ->coinb1_p2wpkh, "%s%s%s01"
+			"0000000000000000000000000000000000000000000000000000000000000000"
+			"ffffffff%02x%s", eversion1, entime, "0001", script_len, script1);
+		templ->is_p2wpkh = true;
+	}
 
 	sprintf(templ->coinb2, "%s00000000", script2);
 
@@ -2443,6 +2473,11 @@ void coinbase_create(YAAMP_COIND *coind, YAAMP_JOB_TEMPLATE *templ, json_value *
 		strcat(templ->coinb2, "01");
 	}
 
+	if (templ->is_p2wpkh) {
+		strcpy(templ->coinb2_p2wpkh, templ->coinb2);
+		job_pack_tx(coind, templ->coinb2_p2wpkh, available, NULL, (coind->p2wpkh));
+	}
+
 	job_pack_tx(coind, templ->coinb2, available, NULL);
 
 	//if(coind->txmessage)
@@ -2451,6 +2486,9 @@ void coinbase_create(YAAMP_COIND *coind, YAAMP_JOB_TEMPLATE *templ, json_value *
   if(strcmp(coind->symbol, "FLO") == 0){if(coind->txmessage){strcat(templ->coinb2, "00");}} //fixes FlorinCoin
 	if(strcmp(coind->symbol, "GIO") == 0){if(coind->txmessage){strcat(templ->coinb2, "00");}} //fixes GravioCoin
 	strcat(templ->coinb2, "00000000"); // locktime
+	if (templ->is_p2wpkh) {
+		strcat(templ->coinb2_p2wpkh, "00000000"); // locktime
+	}
 
 	coind->reward = (double)available/100000000*coind->reward_mul;
 //	debuglog("coinbase %f\n", coind->reward);

@@ -157,11 +157,15 @@ bool coind_validate_address(YAAMP_COIND *coind)
 		stratumlog("Warning: unable to decode %s %s script pubkey\n", coind->symbol, coind->wallet);
 
 	coind->p2sh_address = json_get_bool(json_result, "isscript");
+	coind->p2wpkh =  json_get_bool(json_result, "iswitness");
 
 	// if base58 decode fails
 	if (!strlen(coind->script_pubkey)) {
 		const char *pk = json_get_string(json_result, "scriptPubKey");
-		if (pk && strlen(pk) > 10) {
+		if (pk && coind->p2wpkh ) {
+			strcpy(coind->script_pubkey, pk);
+		}
+		else if (pk && strlen(pk) > 10) {
 			strcpy(coind->script_pubkey, &pk[6]);
 			coind->script_pubkey[strlen(pk)-6-4] = '\0';
 			stratumlog("%s %s extracted script pubkey is %s\n", coind->symbol, coind->wallet, coind->script_pubkey);

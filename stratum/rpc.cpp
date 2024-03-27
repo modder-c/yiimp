@@ -262,10 +262,24 @@ json_value *rpc_call(YAAMP_RPC *rpc, char const *method, char const *params)
 	else
 		sprintf(message, "{\"method\":\"%s\",\"id\":\"%d\"}", method, ++rpc->id);
 
+	if (g_debuglog_rpc) {
+		if (strlen(message) > (YAAMP_SMALLBUFSIZE/2))
+			debuglog("RPC-Call *** buffer to small ***\n");
+		else
+			debuglog("RPC-Call %s\n", message);
+	}
+
 	char *buffer = rpc_do_call(rpc, message);
 
 	free(message);
 	if(!buffer) return NULL;
+
+	if (g_debuglog_rpc) {
+		if (strlen(buffer) > (YAAMP_SMALLBUFSIZE/2))
+			debuglog("RPC-Resp *** buffer to small ***\n");
+		else
+			debuglog("RPC-Resp %s\n", buffer);
+	}
 
 	json_value *json = json_parse(buffer, strlen(buffer));
 	if(!json) {

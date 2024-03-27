@@ -285,13 +285,14 @@ YAAMP_JOB_TEMPLATE *coind_create_template(YAAMP_COIND *coind)
 	if(json_rules && !strlen(coind->witness_magic) && json_rules->u.array.length) {
 		for (int i=0; i<json_rules->u.array.length; i++) {
 			json_value *val = json_rules->u.array.values[i];
-			if(!strcmp(val->u.string.ptr, "segwit")) {
+			if((!strcmp(val->u.string.ptr, "segwit")) || (coind->p2wpkh)) {
 				const char *commitment = json_get_string(json_result, "default_witness_commitment");
 				strcpy(coind->witness_magic, "aa21a9ed");
 				if (commitment && strlen(commitment) > 12) {
 					strncpy(coind->witness_magic, &commitment[4], 8);
 					coind->witness_magic[8] = '\0';
 				}
+				coind->usesegwit |= coind->p2wpkh;
 				coind->usesegwit |= g_stratum_segwit;
 				if (coind->usesegwit)
 					debuglog("%s segwit enabled, magic %s\n", coind->symbol, coind->witness_magic);
@@ -485,6 +486,9 @@ YAAMP_JOB_TEMPLATE *coind_create_template(YAAMP_COIND *coind)
 		templ->txsteps = merkle_steps(txhashes);
 	}
 
+	// to fix:  filtered_txs can not be used with segwit coins as filtering txs from template corrupts
+	//			the witness hash tree in given witness commitment by gbt
+	templ->has_segwit_txs |= coind->p2wpkh;
 	if(templ->has_segwit_txs) {
 		// * We compute the witness hash (which is the hash including witnesses) of all the block's transactions, except the
 		//   coinbase (where 0x0000....0000 is used instead).

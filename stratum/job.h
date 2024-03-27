@@ -55,6 +55,9 @@ struct YAAMP_JOB_TEMPLATE
 
 	char coinb1[4*1024];
 	char coinb2[4*1024];
+	char coinb1_p2wpkh[4*1024];
+	char coinb2_p2wpkh[4*1024];
+	bool is_p2wpkh;
 	char coinforsubmitb1[4*1024];
 	char coinforsubmitb2[4*1024];
 	bool isbitcash;
