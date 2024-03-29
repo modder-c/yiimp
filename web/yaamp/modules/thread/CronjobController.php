@@ -98,6 +98,13 @@ class CronjobController extends CommonController
 //		screenlog(__FUNCTION__.' done');
 	}
 
+	public function actionGithubScan()
+    {
+    	set_time_limit(0);
+    
+    	BackendCoinsVersionUpdate();
+    }
+
 	public function actionRun()
 	{
 //		debuglog(__METHOD__);

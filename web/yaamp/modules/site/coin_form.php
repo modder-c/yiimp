@@ -71,6 +71,18 @@ echo CUFHtml::activeTextField($coin, 'image', array('maxlength'=>200));
 echo '<p class="formHint2"></p>';
 echo CUFHtml::closeCtrlHolder();
 
+echo CUFHtml::openActiveCtrlHolder($coin, 'version_installed');
+echo CUFHtml::activeLabelEx($coin, 'version_installed');
+echo CUFHtml::activeTextField($coin, 'version_installed', array('maxlength'=>64,'style'=>'width: 120px;'));
+echo '<p class="formHint2">walletversion installed</p>';
+echo CUFHtml::closeCtrlHolder();
+
+echo CUFHtml::openActiveCtrlHolder($coin, 'version_github');
+echo CUFHtml::activeLabelEx($coin, 'version_github');
+echo CUFHtml::activeTextField($coin, 'version_github', array('maxlength'=>200,'style'=>'width: 100px;','readonly'=>'readonly'));
+echo '<p class="formHint2">walletversion on GitHub</p>';
+echo CUFHtml::closeCtrlHolder();
+
 echo CUFHtml::openActiveCtrlHolder($coin, 'payout_min');
 echo CUFHtml::activeLabelEx($coin, 'payout_min');
 echo CUFHtml::activeTextField($coin, 'payout_min', array('maxlength'=>200,'style'=>'width: 120px;'));

@@ -48,6 +48,15 @@ define('YAAMP_CREATE_NEW_COINS', true);
 define('YAAMP_NOTIFY_NEW_COINS', false);
 define('YAAMP_DEFAULT_ALGO', 'x11');
 
+/* mail server access data to send mails using external mailserver */
+define('SMTP_HOST', 'mail.example.com');
+define('SMTP_PORT', 25);
+define('SMTP_USEAUTH', true);
+define('SMTP_USERNAME', 'mailuser');
+define('SMTP_PASSWORD', 'mailpassword');
+define('SMTP_DEFAULT_FROM', 'mailuser@example.com');
+define('SMTP_DEFAULT_HELO', 'mypool-server.example.com');
+
 define('YAAMP_USE_NGINX', false);
 
 /* Sample config file to put in /etc/yiimp/keys.php */

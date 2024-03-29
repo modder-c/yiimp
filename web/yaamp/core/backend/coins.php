@@ -1,5 +1,8 @@
 <?php
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+
 function percent_feedback($v, $n, $p)
 {
 	return ($v*(100-$p) + $n*$p) / 100;
@@ -360,6 +363,105 @@ function BackendCoinsUpdate()
 	controller()->memcache->add_monitoring_function(__METHOD__, $d1);
 }
 
+function BackendCoinsVersionUpdate($check_algo = '')
+{
+	$link = false;
+	$current_algo = '';
 
+	$mail_source = SMTP_DEFAULT_FROM;
+	$mail_dest = YAAMP_ADMIN_EMAIL;
+	$mail_subject = "new wallet versions found";
+	$mail_text = '';
+	$algo_text = '';
 
+	if ($check_algo == '') {
+		$coins = getdbolist('db_coins', "installed order by algo asc");
+	}
+	else {
+		$coins = getdbolist('db_coins', "installed and algo = '$check_algo'");
+	}
 
+	foreach($coins as $coin) {
+		if ($current_algo != $coin->algo) {
+		    if ($algo_text != '') {
+		      $mail_text .= "#### Algo: $current_algo ####\n".$algo_text;
+		    }
+			$current_algo = $coin->algo;
+			$algo_text = '';
+		}
+
+		if ($coin->link_github && ($coin->link_github != '') && (strstr($coin->link_github, 'github'))) {
+			debuglog("requesting $coin->name $coin->symbol from github");
+
+			$link = str_replace('https://github.com/', 'https://api.github.com/repos/', $coin->link_github);
+			if ($link) {
+				$link .= '/releases/latest';
+				// request
+				$ch = curl_init($link);
+				curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+				curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+				curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+				curl_setopt($ch, CURLOPT_MAXREDIRS , 5);
+				curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+				curl_setopt($ch, CURLOPT_USERAGENT, 'coinupdater v0.1 (checking for latest release version)');
+				$execResult = strip_tags(curl_exec($ch));
+				$obj = json_decode($execResult);
+
+				if (($obj) && (isset($obj->tag_name)) && ($obj->tag_name != '') && ($obj->tag_name != $coin->version_github)) {
+					debuglog("update ".$coin->id." version ".$obj->tag_name);
+					dborun("UPDATE coins SET version_github=:github WHERE id=:coinid",
+							array(':github' => $obj->tag_name, ':coinid'=>intval($coin->id)));
+					$algo_text .= $coin->name.'('.$coin->symbol.') ID:'.$coin->id.' algo:'.$coin->algo.' : New release found ('.$obj->tag_name.")\n";
+				}
+/*				if ((!$obj) || (!isset($obj->tag_name))) {
+					debuglog("link $link version ".var_export($execResult,true));
+					if (($obj) && (isset($obj->message))) {
+						$mail_text .= $coin->name.'('.$coin->symbol.') ID:'.$coin->id.' algo:'.$coin->algo.' : link '.$link.' message '.$obj->message."\n";
+					}
+				}
+*/
+			}
+			sleep(5); // slow down
+		}
+		elseif ((!$coin->link_github) || ($coin->link_github == '')) {
+		    $algo_text .= $coin->name.'('.$coin->symbol.') ID:'.$coin->id.' algo:'.$coin->algo.' : missing github-repo'."\n";
+		}
+
+		if ($coin->version_installed != $coin->version_github) {
+		    $algo_text .= $coin->name.'('.$coin->symbol.') ID:'.$coin->id.' algo:'.$coin->algo.' : version installed ('.$coin->version_installed.') differs from latest release ('.$coin->version_github.")\n";
+		}
+	}
+
+	// add last algo
+	if ($algo_text != '') {
+	    $mail_text .= "#### Algo: $current_algo ####\n".$algo_text;
+	    $algo_text = '';
+	}
+	
+	if ($mail_text != '') {
+		debuglog($mail_text);
+		
+		// prepare Report-Email
+	    $mail = new PHPMailer(false);
+
+	    $mail->isSMTP();
+		$mail->Helo = SMTP_DEFAULT_HELO;
+	    $mail->Host       = SMTP_HOST;
+	    $mail->SMTPAuth   = SMTP_USEAUTH;
+	    $mail->Port       = SMTP_PORT;
+	    if (SMTP_USEAUTH) {
+			$mail->Username   = SMTP_USERNAME;
+			$mail->Password   = SMTP_PASSWORD;
+	    }
+
+	    $mail->setFrom($mail_source, 'GitHub Version Updater');
+		$mail->addAddress($mail_dest, 'Yiimp Poolsystem');
+		
+		$mail->isHTML(false);
+		$mail->Subject = $mail_subject;
+	    $mail->Body    = $mail_text;
+
+		$mail->send();
+		unset($mail); // reset mailer
+	}
+}
