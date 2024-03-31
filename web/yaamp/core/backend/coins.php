@@ -403,6 +403,9 @@ function BackendCoinsVersionUpdate($check_algo = '')
 				curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
 				curl_setopt($ch, CURLOPT_MAXREDIRS , 5);
 				curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+				if (defined('GITHUB_ACCESSTOKEN')) {
+					curl_setopt($ch, CURLOPT_USERPWD, GITHUB_ACCESSTOKEN);
+				}
 				curl_setopt($ch, CURLOPT_USERAGENT, 'coinupdater v0.1 (checking for latest release version)');
 				$execResult = strip_tags(curl_exec($ch));
 				$obj = json_decode($execResult);

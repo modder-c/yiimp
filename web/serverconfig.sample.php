@@ -48,6 +48,9 @@ define('YAAMP_CREATE_NEW_COINS', true);
 define('YAAMP_NOTIFY_NEW_COINS', false);
 define('YAAMP_DEFAULT_ALGO', 'x11');
 
+/* Github access token used to scan coin repos for new releases */
+define('GITHUB_ACCESSTOKEN', '<username>:<api-secret>');
+
 /* mail server access data to send mails using external mailserver */
 define('SMTP_HOST', 'mail.example.com');
 define('SMTP_PORT', 25);
