@@ -81,6 +81,9 @@ function BackendCoinsUpdate()
 			$coin->difficulty = 1;
 
 		$coin->errors = isset($info['errors'])? $info['errors']: '';
+		// filter warnings
+		if (strstr($coin->errors,'check your network connection') !== false) $coin->errors = '';
+
 		$coin->txfee = isset($info['paytxfee'])? $info['paytxfee']: '';
 		$coin->connections = isset($info['connections'])? $info['connections']: '';
 		$coin->multialgos = (int) isset($info['pow_algo_id']);
@@ -129,7 +132,10 @@ function BackendCoinsUpdate()
 		}
 
         // Change for segwit
-        if ($coin->usesegwit) {
+		if ($coin->symbol == 'LTC') {
+			$template = $remote->getblocktemplate('{"rules":["segwit","mweb"]}');
+		}
+		else if ($coin->usesegwit) {
             $template = $remote->getblocktemplate('{"rules":["segwit"]}');
         } else {
             $template = $remote->getblocktemplate('{}');
@@ -291,19 +297,23 @@ function BackendCoinsUpdate()
 			}
 //		}
 
-		if($coin->block_height != $info['blocks'])
-		{
-			$count = $info['blocks'] - $coin->block_height;
-			$ttf = $count > 0 ? (time() - $coin->last_network_found) / $count : 0;
+		if (isset($info['blocks'])) {
+			if($coin->block_height != $info['blocks'])
+			{
+				$count = $info['blocks'] - $coin->block_height;
+				$ttf = $count > 0 ? (time() - $coin->last_network_found) / $count : 0;
 
-			if(empty($coin->actual_ttf)) $coin->actual_ttf = $ttf;
+				if(empty($coin->actual_ttf)) $coin->actual_ttf = $ttf;
 
-			$coin->actual_ttf = percent_feedback($coin->actual_ttf, $ttf, 5);
-			$coin->last_network_found = time();
+				$coin->actual_ttf = percent_feedback($coin->actual_ttf, $ttf, 5);
+				$coin->last_network_found = time();
+			}
+		}
+		else {
+			debuglog($coin->symbol." wallet is missing blocks in info-array");
 		}
 
 		$coin->version = substr($info['version'], 0, 32);
-		$coin->block_height = $info['blocks'];
 
 		if($coin->powend_height > 0 && $coin->block_height > $coin->powend_height) {
 			if ($coin->auto_ready) {
