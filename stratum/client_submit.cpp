@@ -284,6 +284,11 @@ static void client_do_submit(YAAMP_CLIENT *client, YAAMP_JOB *job, YAAMP_JOB_VAL
 				snprintf(block_hex, block_size, "%s", hex);
 		}
 
+		if(strlen(templ->mweb) > 0) {
+			strcat(block_hex, "01");
+			strcat(block_hex, templ->mweb);
+		}
+
 		bool b = coind_submit(coind, block_hex);
 		if(b)
 		{
@@ -398,6 +403,11 @@ bool client_submit(YAAMP_CLIENT *client, json_value *json_params)
 	char nonce[80] = { 0 };
 	char ntime[32] = { 0 };
 	char vote[8] = { 0 };
+
+	memset(extranonce2, 0, 32);
+	memset(ntime, 0, 32);
+	memset(nonce, 0, 64);
+	memset(vote, 0, 8);
 
 	if (strlen(json_params->u.array.values[1]->u.string.ptr) > 32) {
 		clientlog(client, "bad json, wrong jobid len");

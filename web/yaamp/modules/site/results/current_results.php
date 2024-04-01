@@ -158,8 +158,8 @@ foreach ($algos as $item)
             $port_count = getdbocount('db_stratums', "algo=:algo and symbol=:symbol", array(':algo' => $algo,':symbol' => $coin->symbol));
             $port_db = getdbosql('db_stratums', "algo=:algo and symbol=:symbol", array(':algo' => $algo,':symbol' => $coin->symbol));
 
-            $dontsell = $coin->dontsell;
-            if ($dontsell == 1) echo "<td align='center' valign='top' style='font-size: .8em;'><img width=13 src='/images/cancel.png'></td>";
+            $auto_exchange = $coin->auto_exchange;
+            if ($auto_exchange != 1) echo "<td align='center' valign='top' style='font-size: .8em;'><img width=13 src='/images/cancel.png'></td>";
             else echo "<td align='center' valign='top' style='font-size: .8em;'><img width=13 src='/images/ok.png'></td>";
 			
 			$min_payout = max(floatval(YAAMP_PAYMENTS_MINI), floatval($coin->payout_min));

@@ -34,6 +34,10 @@ static bool job_assign_client(YAAMP_JOB *job, YAAMP_CLIENT *client, double maxha
 		return true;
 	}
 
+	if ((!job->coind->auto_exchange) && (!coin_to_mine)) {
+		return true;
+	}
+
 	if ( maxhash >= 0. ) {
 		if (( specific_mining ) && (!coin_to_mine)) return true;
 	}
@@ -230,6 +234,9 @@ void job_assign_clients_left(double factor)
 					factor = 100.;
 				else
 					factor = 0.;
+			}
+			else if ((!(coind->auto_exchange)) && (!coin_to_mine)) {
+				factor = 0.;
 			}
 
 			if (coin_to_ignore) {

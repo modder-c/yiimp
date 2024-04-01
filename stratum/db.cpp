@@ -204,7 +204,8 @@ void db_update_coinds(YAAMP_DB *db)
 	db_query(db, "SELECT id, name, rpchost, rpcport, rpcuser, rpcpasswd, rpcencoding, master_wallet, reward, price, "
 		"hassubmitblock, txmessage, enable, auto_ready, algo, pool_ttf, charity_address, charity_amount, charity_percent, "
 		"reward_mul, symbol, auxpow, actual_ttf, network_ttf, usememorypool, hasmasternodes, algo, symbol2, "
-		"rpccurl, rpcssl, rpccert, account, multialgos, max_miners, max_shares, usesegwit "
+		"rpccurl, rpcssl, rpccert, account, multialgos, max_miners, max_shares, usesegwit, "
+		"auto_exchange, enable_rpcdebug "
 		"FROM coins WHERE enable AND auto_ready AND algo='%s' ORDER BY index_avg", g_stratum_algo);
 
 	MYSQL_RES *result = mysql_store_result(&db->mysql);
@@ -321,6 +322,9 @@ void db_update_coinds(YAAMP_DB *db)
 		if(row[33] && atoi(row[33]) > 0) g_stratum_max_cons = atoi(row[33]);
 		if(row[34] && atol(row[34]) > 0) g_max_shares = atol(row[34]);
 		if(row[35]) coind->usesegwit = atoi(row[35]) > 0;
+
+		if(row[36]) coind->auto_exchange = atoi(row[36]) > 0;
+		if(row[37]) coind->rpcdebug = atoi(row[37]) > 0;
 
 		if(coind->usesegwit) g_stratum_segwit = true;
 

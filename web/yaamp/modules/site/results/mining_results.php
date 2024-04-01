@@ -15,9 +15,9 @@ $total_rate   = yaamp_pool_rate();
 $total_rate_d = $total_rate ? 'at ' . Itoa2($total_rate) . 'h/s' : '';
 
 if ($algo == 'all')
-    $list = getdbolist('db_coins', "enable and visible order by index_avg desc");
+    $list = getdbolist('db_coins', "enable and visible order by auxpow asc,index_avg desc");
 else
-    $list = getdbolist('db_coins', "enable and visible and algo=:algo order by index_avg desc", array(
+    $list = getdbolist('db_coins', "enable and visible and algo=:algo order by auxpow asc,index_avg desc", array(
         ':algo' => $algo
     ));
 
@@ -82,7 +82,13 @@ if ($algo != 'all' && $showrental) {
     $amount_rent = bitcoinvaluetoa($amount_rent);
 }
 
+$separate_aux = 0;
 foreach ($list as $coin) {
+    if($coin->auxpow && !$separate_aux) {
+        $separate_aux = 1;
+        echo "<tr class='ssrow'><td></td><td>merged mined coins</td></tr>";
+    }
+
     $name       = substr($coin->name, 0, 20);
     $difficulty = Itoa2($coin->difficulty, 3);
     $price      = bitcoinvaluetoa($coin->price);
@@ -198,7 +204,9 @@ foreach ($list as $coin) {
         $title  = "We are short of this currency ($owed2 $symbol). Please switch to another currency until we find more $symbol blocks.";
         echo "<td><b><a href=\"/site/block?id={$coin->id}\" title=\"$title\" style=\"color: #c55;\">$name</a></b><span style=\"font-size: .8em;\"> ({$coin->algo})</span></td>";
     } else {
-        echo "<td><b><a href='/site/block?id=$coin->id'>$name</a></b><span style='font-size: .8em'> ($coin->algo)</span></td>";
+		echo "<td><b><a href='/site/block?id=$coin->id'>$name</a></b><span style='font-size: .8em'> ($coin->algo)</span>".
+			(($coin->auto_exchange)?"":"<span style='font-size: .8em; color: red; font-weight: bold;'>(no autotrade)</span>").
+			"</td>";
     }
     echo "<td align=right style='font-size: .8em;'><b>$reward $coin->symbol_show</b></td>";
 

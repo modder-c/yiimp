@@ -12,11 +12,11 @@ bool coind_submitwork(YAAMP_COIND *coind, const char *block)
 	}
 
 	sprintf(params, "[\"%s\"]", block);
-	json_value *json = rpc_call(&coind->rpc, "getwork", params);
+	json_value *json = rpc_call(&coind->rpc, "getwork", params, coind);
 	if(!json) {
 		debuglog("%s: retry\n", __func__);
 		usleep(500*YAAMP_MS);
-		json = rpc_call(&coind->rpc, "getwork", params);
+		json = rpc_call(&coind->rpc, "getwork", params, coind);
 	}
 	free(params);
 
@@ -41,7 +41,7 @@ bool coind_submitblock(YAAMP_COIND *coind, const char *block)
 	if(!params) return false;
 
 	sprintf(params, "[\"%s\"]", block);
-	json_value *json = rpc_call(&coind->rpc, "submitblock", params);
+	json_value *json = rpc_call(&coind->rpc, "submitblock", params, coind);
 
 	free(params);
 	if(!json) return false;
@@ -74,7 +74,7 @@ bool coind_submitblocktemplate(YAAMP_COIND *coind, const char *block)
 	if(!params) return false;
 
 	sprintf(params, "[{\"mode\": \"submit\", \"data\": \"%s\"}]", block);
-	json_value *json = rpc_call(&coind->rpc, "getblocktemplate", params);
+	json_value *json = rpc_call(&coind->rpc, "getblocktemplate", params, coind);
 
 	free(params);
 	if(!json) return false;
@@ -121,7 +121,13 @@ bool coind_submitgetauxblock(YAAMP_COIND *coind, const char *hash, const char *b
 	if(!params) return false;
 
 	sprintf(params, "[\"%s\",\"%s\"]", hash, block);
-	json_value *json = rpc_call(&coind->rpc, "getauxblock", params);
+	json_value *json = NULL;
+	if ((strcmp(coind->symbol, "XMY") == 0) || (strcmp(coind->symbol2, "XMY") == 0) ||
+		(strcmp(coind->symbol, "QBC") == 0) || (strcmp(coind->symbol2, "QBC") == 0)
+		)
+		json = rpc_call(&coind->rpc, "submitauxblock", params, coind);
+	else
+		json = rpc_call(&coind->rpc, "getauxblock", params, coind);
 
 	free(params);
 	if(!json) return false;

@@ -14,7 +14,7 @@ void coind_getauxblock(YAAMP_COIND *coind)
 		static char wallet_address[1028];
 		if (coind->wallet) sprintf(wallet_address, "[\"%s\"]", coind->wallet);
 
-		json = rpc_call(&coind->rpc, "createauxblock", wallet_address);
+		json = rpc_call(&coind->rpc, "createauxblock", wallet_address, coind);
 		if(!json)
 		{
 			coind_error(coind, "coind_createauxblock");
@@ -22,7 +22,7 @@ void coind_getauxblock(YAAMP_COIND *coind)
 		}
 	}
 	else {
-		json = rpc_call(&coind->rpc, "getauxblock", "[]");
+		json = rpc_call(&coind->rpc, "getauxblock", "[]", coind);
 		if(!json)
 		{
 			coind_error(coind, "coind_getauxblock");
@@ -261,7 +261,12 @@ YAAMP_JOB_TEMPLATE *coind_create_template(YAAMP_COIND *coind)
 	if(!strcmp(coind->symbol, "PPC")) strcpy(params, "[]");
 	else if(g_stratum_segwit) strcpy(params, "[{\"rules\":[\"segwit\"]}]");
 
-	json_value *json = rpc_call(&coind->rpc, "getblocktemplate", params);
+	// LTC force mweb and segwit
+	if (!strcmp(coind->symbol, "LTC")) {
+		strcpy(params, "[{\"rules\":[\"segwit\",\"mweb\"]}]");
+	}
+
+	json_value *json = rpc_call(&coind->rpc, "getblocktemplate", params, coind);
 	if(!json || json_is_null(json))
 	{
 		// coind_error() reset auto_ready, and DCR gbt can fail
@@ -339,6 +344,12 @@ YAAMP_JOB_TEMPLATE *coind_create_template(YAAMP_COIND *coind)
 
 	if (coind->mining_disabled) {
 		debuglog("mining disabled for next block on %s\n",coind->symbol);
+	}
+
+	// LTC mw-eb
+	const char *mweb = json_get_string(json_result, "mweb");
+	if (mweb) {
+		strcpy(templ->mweb, mweb);
 	}
 
 	// LBC Claim Tree (with wallet gbt patch)
@@ -472,6 +483,8 @@ YAAMP_JOB_TEMPLATE *coind_create_template(YAAMP_COIND *coind)
 		}
 	}
 
+	if (strlen(templ->mweb) > 0) templ->has_segwit_txs = true;
+
 	if (templ->has_filtered_txs) {
 		// coinbasevalue is a total with all tx fees, need to reduce it if some are skipped
 		templ->value -= templ->filtered_txs_fee;
@@ -579,6 +592,12 @@ bool coind_create_job(YAAMP_COIND *coind, bool force)
 		strcmp(templ->coinb2, job_last->templ->coinb2) == 0)
 	{
 //		debuglog("coind_create_job %s %d same template %x \n", coind->name, coind->height, coind->job->id);
+		for(int i=0; i<templ->auxs_size; i++) {
+			if (templ->auxs[i]) {
+				free(templ->auxs[i]); templ->auxs[i] = NULL;
+			}
+		}
+
 		if (templ->txcount) {
 			templ->txsteps.clear();
 			templ->txdata.clear();

@@ -65,6 +65,12 @@ echo '<label style="padding-left: 20px;" for="algo">Algo Selected: '.$coin_algo.
 echo '<p class="formHint2">Required all lower case</p>';
 echo CUFHtml::closeCtrlHolder();
 
+echo CUFHtml::openActiveCtrlHolder($coin, 'auto_exchange');
+echo CUFHtml::activeLabelEx($coin, 'auto_exchange');
+echo CUFHtml::activeCheckBox($coin, 'auto_exchange');
+echo '<p class="formHint2">include in automatic miningselection</p>';
+echo CUFHtml::closeCtrlHolder();
+
 echo CUFHtml::openActiveCtrlHolder($coin, 'image');
 echo CUFHtml::activeLabelEx($coin, 'image');
 echo CUFHtml::activeTextField($coin, 'image', array('maxlength'=>200));
@@ -187,6 +193,12 @@ echo CUFHtml::openActiveCtrlHolder($coin, 'auxpow');
 echo CUFHtml::activeLabelEx($coin, 'auxpow');
 echo CUFHtml::activeCheckBox($coin, 'auxpow');
 echo '<p class="formHint2">Merged mining</p>';
+echo CUFHtml::closeCtrlHolder();
+
+echo CUFHtml::openActiveCtrlHolder($coin, 'enable_rpcdebug');
+echo CUFHtml::activeLabelEx($coin, 'enable_rpcdebug');
+echo CUFHtml::activeCheckBox($coin, 'enable_rpcdebug');
+echo '<p class="formHint2">enable debug of rpc-communication from stratum to wallet</p>';
 echo CUFHtml::closeCtrlHolder();
 
 echo CUFHtml::openActiveCtrlHolder($coin, 'max_miners');

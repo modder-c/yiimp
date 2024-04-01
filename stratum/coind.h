@@ -77,6 +77,9 @@ public:
 	char commitment[128];
 	char witness_magic[16];
 
+	bool auto_exchange;
+	bool rpcdebug;
+
 	YAAMP_JOB *job;
 //	YAAMP_JOB_TEMPLATE *templ;
 };
