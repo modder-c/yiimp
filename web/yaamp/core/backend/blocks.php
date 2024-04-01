@@ -28,7 +28,12 @@ function BackendBlockNew($coin, $db_block)
 			':workerid'=>$db_block->workerid
 		)
 	);
-	
+	// $is_shared = !$is_solo;
+
+	$sqlCond =	" blocknumber <= ".intval($db_block->height).
+				" AND blockrewarded IS NULL".
+				" AND coinid = ".intval($coin->id);
+
 	if ($is_shared)
 	{
 		debuglog("Shared Mining Found Block : $coin->id height $db_block->height with $db_block->userid");
@@ -42,10 +47,6 @@ function BackendBlockNew($coin, $db_block)
 			)
 		);
 	
-		$sqlCond =	" blocknumber <= ".intval($db_block->height).
-					" AND blockrewarded IS NULL".
-					" AND coinid = ".intval($coin->id);
-
 		foreach ($solo_workers as $solo_worker)
 		{
 			dborun("DELETE FROM shares WHERE algo=:algo AND workerid=:workerid AND $sqlCond",array(':algo'=>$coin->algo,':workerid'=>$solo_worker->id));
