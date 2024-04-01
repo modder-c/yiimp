@@ -31,7 +31,7 @@ function BackendClearEarnings($coinid = NULL)
 		}
 
 		$earning->status = 2;		// cleared
-		$earning->price = $coin->price;
+		$earning->price = ($coin->auto_exchange) ? $coin->price : 0 ;
 		$earning->save();
 
 // 		$refcoin = getdbo('db_coins', $user->coinid);

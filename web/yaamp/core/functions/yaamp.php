@@ -597,9 +597,9 @@ function yaamp_convert_amount_user($coin, $amount, $user)
 	if (YAAMP_ALLOW_EXCHANGE) {
 		if(!$refcoin) $refcoin = getdbosql('db_coins', "symbol='BTC'");
 		if(!$refcoin || $refcoin->price <= 0) return 0;
-		$value = $amount * $coin->price / $refcoin->price;
+		$value = $amount * (($coin->auto_exchange)?$coin->price : 0.) / $refcoin->price;
 	} else if ($coin->price && $refcoin && $refcoin->price > 0.) {
-		$value = $amount * $coin->price / $refcoin->price;
+		$value = $amount * (($coin->auto_exchange)?$coin->price : 0.) / $refcoin->price;
 	} else if ($coin->id == $user->coinid) {
 		$value = $amount;
 	}

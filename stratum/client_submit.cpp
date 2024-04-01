@@ -369,7 +369,7 @@ void client_submit_error(YAAMP_CLIENT *client, YAAMP_JOB *job, int id, const cha
 	else
 	{
 		client_send_error(client, id, message);
-		share_add(client, job, false, extranonce2, ntime, nonce, 0, id);
+		share_add(client, job, false, extranonce2, ntime, nonce, 0, id, 0);
 
 		client->submit_bad++;
 		if (g_debuglog_hash) {
@@ -533,17 +533,19 @@ bool client_submit(YAAMP_CLIENT *client, json_value *json_params)
 		lyra2z_height = templ->height;
 	}
 
-        uint64_t hash_int = * (uint64_t *) &submitvalues.hash_bin[24];
-        uint64_t user_target = share_to_target(client->difficulty_actual) * g_current_algo->diff_multiplier;
-        uint64_t coin_target = decode_compact(templ->nbits) / 0x10000;
+		uint64_t hash_int = get_hash_difficulty(&(submitvalues.hash_bin[0]));
+		// hash_int divided by 0x10000 to match user_target scaling
+		uint64_t hash_int_scaled = hash_int / 0x10000;
+	    uint64_t user_target = share_to_target(client->difficulty_actual) * g_current_algo->diff_multiplier;
+        uint64_t coin_target = decode_compact(templ->nbits);
 
 if (g_debuglog_hash) {
-        debuglog("hash %016lx \n", hash_int);
+        debuglog("hash %016lx \n", hash_int_scaled);
         debuglog("shar %016lx \n", user_target);
-        debuglog("coin %016lx \n", coin_target);
+        debuglog("coin %016lx \n", coin_target / 0x10000);
 }
 
-	if(hash_int > user_target && hash_int > coin_target)
+	if(hash_int_scaled > user_target && hash_int > coin_target)
 	{
 		client_submit_error(client, job, 26, "Low difficulty share", extranonce2, ntime, nonce);
 		return true;
@@ -563,19 +565,20 @@ if (g_debuglog_hash) {
 		if (!client_ask_stats(client)) client->stats = false;
 	}
 
-	double share_diff = diff_to_target(hash_int);
+	double share_diff = target_to_diff(hash_int);
 //	if (g_current_algo->diff_multiplier != 0) {
 //		share_diff = share_diff / g_current_algo->diff_multiplier;
 //	}
 
 	if (g_debuglog_hash) {
 		// only log a few...
-		if (share_diff > (client->difficulty_actual * 16))
+		if (hash_int_scaled  < (user_target / 16))
 			debuglog("submit %s (uid %d) %d, %s, %s, %s, %.3f/%.3f\n", client->sock->ip, client->userid,
 				jobid, extranonce2, ntime, nonce, share_diff, client->difficulty_actual);
 	}
 
-	share_add(client, job, true, extranonce2, ntime, nonce, share_diff, 0);
+	share_add(client, job, true, extranonce2, ntime, nonce, share_diff, 0, job->templ->height);
+
 	object_unlock(job);
 
 	return true;

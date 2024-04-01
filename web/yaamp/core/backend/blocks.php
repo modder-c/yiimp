@@ -1,5 +1,8 @@
 <?php
 
+// function for distribute blockreward for given block proportional on user-shares 
+//  todo: needs rework to cover correctly all cases (non autoexchange mode, solo etc.)
+
 function BackendBlockNew($coin, $db_block)
 {
 //	debuglog("NEW BLOCK $coin->name $db_block->height");
@@ -39,20 +42,18 @@ function BackendBlockNew($coin, $db_block)
 			)
 		);
 	
+		$sqlCond =	" blocknumber <= ".intval($db_block->height).
+					" AND blockrewarded IS NULL".
+					" AND coinid = ".intval($coin->id);
+
 		foreach ($solo_workers as $solo_worker)
 		{
-			$sqlCond = "";
-			if(!YAAMP_ALLOW_EXCHANGE) // only one coin mined
-				$sqlCond .= " coinid = ".intval($coin->id);
-				
 			dborun("DELETE FROM shares WHERE algo=:algo AND workerid=:workerid AND $sqlCond",array(':algo'=>$coin->algo,':workerid'=>$solo_worker->id));
 		}
 
-		$sqlCond = "valid = 1";
-		if(!YAAMP_ALLOW_EXCHANGE) // only one coin mined
-			$sqlCond .= " AND coinid = ".intval($coin->id);
+		$sqlCond .= "AND valid = 1";
 
-		$total_hash_power = dboscalar("SELECT SUM(difficulty) FROM shares WHERE $sqlCond AND algo=:algo", array(':algo'=>$coin->algo));
+		$total_hash_power = dboscalar("SELECT SUM(difficulty) FROM shares WHERE algo=:algo AND $sqlCond", array(':algo'=>$coin->algo));
 		if(!$total_hash_power) return;
 
 		$list = dbolist("SELECT userid, SUM(difficulty) AS total FROM shares WHERE $sqlCond AND algo=:algo GROUP BY userid",
@@ -80,7 +81,7 @@ function BackendBlockNew($coin, $db_block)
 			$earning->coinid = $coin->id;
 			$earning->blockid = $db_block->id;
 			$earning->create_time = $db_block->time;
-			$earning->price = $coin->price;
+			$earning->price = ($coin->auto_exchange) ? $coin->price : 0;
 
 			if($db_block->category == 'generate')
 			{
@@ -131,7 +132,7 @@ function BackendBlockNew($coin, $db_block)
 		$earning->coinid = $coin->id;
 		$earning->blockid = $db_block->id;
 		$earning->create_time = $db_block->time;
-		$earning->price = $coin->price;
+		$earning->price = ($coin->auto_exchange) ? $coin->price : 0 ;
 
 		if($db_block->category == 'generate')
 		{
@@ -164,19 +165,17 @@ function BackendBlockNew($coin, $db_block)
 		$db_block->save();
 	}
 	
-	$delay = time() - 5*60;
-	$sqlCond = "time < $delay";
-	if(!YAAMP_ALLOW_EXCHANGE) // only one coin mined
-		$sqlCond .= " AND coinid = ".intval($coin->id);
-
+	// todo: optimize all queries by re-ordering where-conditions to lower occurence of possible mysql deadlock-error
 	try {
-		dborun("DELETE FROM shares WHERE algo=:algo AND $sqlCond", array(':algo'=>$coin->algo));
-	
+		dborun("UPDATE shares SET blocknumber = ".$db_block->height.", blockrewarded = ".$db_block->height." WHERE algo=:algo AND $sqlCond",
+				array(':algo'=>$coin->algo));
+
 	} catch (CDbException $e) {
 
-		debuglog("unable to delete shares $sqlCond retrying...");
+		debuglog("unable to update shares $sqlCond retrying...");
 		sleep(1);
-		dborun("DELETE FROM shares WHERE algo=:algo AND $sqlCond", array(':algo'=>$coin->algo));
+		dborun("UPDATE shares SET blocknumber = ".$db_block->height.", blockrewarded = ".$db_block->height." WHERE algo=:algo AND $sqlCond",
+				array(':algo'=>$coin->algo));
 		// [errorInfo] => array(0 => 'HY000', 1 => 1205, 2 => 'Lock wait timeout exceeded; try restarting transaction')
 		// [*:message] => 'CDbCommand failed to execute the SQL statement: SQLSTATE[HY000]: General error: 1205 Lock wait timeout exceeded; try restarting transaction'
 	} 
@@ -354,7 +353,7 @@ function BackendBlocksUpdate($coinid = NULL)
 			continue;
 		}
 
-		$block->confirmations = $tx['confirmations'];
+		$block->confirmations = (isset($tx['confirmations']))?$tx['confirmations']:0;
 
 		$category = $block->category;
 		if($block->confirmations == -1 && $coin->enable && $coin->auto_ready) {
@@ -362,7 +361,7 @@ function BackendBlocksUpdate($coinid = NULL)
 			$block->amount = 0;
 		}
 
-		else if(isset($tx['details']) && isset($tx['details'][0]))
+		else if(isset($tx['details']) && isset($tx['details'][0]) && isset($tx['details'][0]['category']))
 			$category = $tx['details'][0]['category'];
 
 		else if(isset($tx['category']))
@@ -457,12 +456,12 @@ function BackendBlockFind2($coinid = NULL)
 			$db_block->coin_id = $coin->id;
 			$db_block->category = 'immature';			//$transaction['category'];
 			$db_block->time = $transaction['time'];
-			$db_block->amount = $transaction['amount'];
+			$db_block->amount = (isset($transaction['amount']))? $transaction['amount'] : 0;
 			$db_block->algo = $coin->algo;
 
 			if (arraySafeVal($blockext,'nonce',0) != 0) {
 				$db_block->difficulty_user = hash_to_difficulty($coin, $transaction['blockhash']);
-			} else if ($coin->rpcencoding == 'POS') {
+			} else if (($coin->rpcencoding == 'POS') && (arraySafeVal($blockext,'flags') == 'proof-of-stake')) {
 				$db_block->category = 'stake';
 			}
 

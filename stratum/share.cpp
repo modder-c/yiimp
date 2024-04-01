@@ -9,8 +9,14 @@
 //	}
 //}
 
-static YAAMP_WORKER *share_find_worker(YAAMP_CLIENT *client, YAAMP_JOB *job, bool valid)
+static YAAMP_WORKER *share_find_worker(YAAMP_CLIENT *client, YAAMP_JOB *job, bool valid, int height, int coinid)
 {
+	int current_coinid = coinid;
+
+	if ((!current_coinid) && (job) && (job->coind)) {
+		current_coinid =  job->coind->id;
+	}
+
 	for(CLI li = g_list_worker.first; li; li = li->next)
 	{
 		YAAMP_WORKER *worker = (YAAMP_WORKER *)li->data;
@@ -26,7 +32,7 @@ static YAAMP_WORKER *share_find_worker(YAAMP_CLIENT *client, YAAMP_JOB *job, boo
 			else if(!job)
 				continue;
 
-			else if((job->coind && worker->coinid == job->coind->id) ||
+			else if(((worker->coinid == current_coinid) && (worker->height == height)) ||
 				(job->remote && worker->remoteid == job->remote->id))
 				return worker;
 		}
@@ -35,12 +41,12 @@ static YAAMP_WORKER *share_find_worker(YAAMP_CLIENT *client, YAAMP_JOB *job, boo
 	return NULL;
 }
 
-static void share_add_worker(YAAMP_CLIENT *client, YAAMP_JOB *job, bool valid, char *ntime, double share_diff, int error_number)
+static void share_add_worker(YAAMP_CLIENT *client, YAAMP_JOB *job, bool valid, char *ntime, double share_diff, int error_number, int height, int coinid, bool isaux)
 {
 //	check_job(job);
 	g_list_worker.Enter();
 
-	YAAMP_WORKER *worker = share_find_worker(client, job, valid);
+	YAAMP_WORKER *worker = share_find_worker(client, job, valid, height, coinid);
 	if(!worker)
 	{
 		worker = new YAAMP_WORKER;
@@ -48,9 +54,10 @@ static void share_add_worker(YAAMP_CLIENT *client, YAAMP_JOB *job, bool valid, c
 
 		worker->userid = client->userid;
 		worker->workerid = client->workerid;
-		worker->coinid = job? (job->coind? job->coind->id: 0): 0;
+		worker->coinid = coinid;
 		worker->remoteid = job? (job->remote? job->remote->id: 0): 0;
 		worker->valid = valid;
+		worker->height = height;
 		worker->error_number = error_number;
 		sscanf(ntime, "%x", &worker->ntime);
 		worker->share_diff = share_diff;
@@ -66,7 +73,11 @@ static void share_add_worker(YAAMP_CLIENT *client, YAAMP_JOB *job, bool valid, c
 	if(valid)
 	{
 		worker->difficulty += client->difficulty_actual / g_current_algo->diff_multiplier;
-		client->speed += client->difficulty_actual / g_current_algo->diff_multiplier * 42;
+		if (!isaux) {
+			client->speed += client->difficulty_actual / g_current_algo->diff_multiplier * 42;
+		}
+		// log best share_diff
+		if (worker->share_diff < share_diff) worker->share_diff = share_diff;
 	//	client->source->speed += client->difficulty_actual / g_current_algo->diff_multiplier * 42;
 	}
 
@@ -84,11 +95,29 @@ static void share_add_worker(YAAMP_CLIENT *client, YAAMP_JOB *job, bool valid, c
 
 /////////////////////////////////////////////////////////////////////////
 
-void share_add(YAAMP_CLIENT *client, YAAMP_JOB *job, bool valid, char *extranonce2, char *ntime, char *nonce, double share_diff, int error_number)
+void share_add(YAAMP_CLIENT *client, YAAMP_JOB *job, bool valid, char *extranonce2, char *ntime, char *nonce, double share_diff, int error_number, int height)
 {
-//	check_job(job);
+	int current_coinid = 0;
 	g_shares_counter++;
-	share_add_worker(client, job, valid, ntime, share_diff, error_number);
+	if ((job) && (job->coind)) {
+		current_coinid =  job->coind->id;
+	}
+	share_add_worker(client, job, valid, ntime, share_diff, error_number, height, current_coinid, false);
+	// add valid aux shares
+	if ((!error_number) && (job)) {
+		YAAMP_JOB_TEMPLATE *templ = job->templ;
+		int auxcoinid = 0;
+		int auxcoinheight = 0;
+		if ((templ) && (templ->auxs_size>0)) {
+			for(int i=0; i<templ->auxs_size; i++) {
+				if ((!templ->auxs[i]) || (!templ->auxs[i]->coind)) continue;
+				auxcoinid = templ->auxs[i]->coind->id;
+				auxcoinheight = templ->auxs[i]->coind->height;
+
+				share_add_worker(client, job, valid, ntime, share_diff, error_number, auxcoinheight, auxcoinid, true);
+			}
+		}
+	}
 
 	YAAMP_SHARE *share = new YAAMP_SHARE;
 	memset(share, 0, sizeof(YAAMP_SHARE));
@@ -129,7 +158,7 @@ void share_write(YAAMP_DB *db)
 	int count = 0;
 	int now = time(NULL);
 
-	char buffer[1024*1024] = "insert into shares (userid, workerid, coinid, jobid, pid, valid, extranonce1, difficulty, share_diff, time, algo, error, solo) values ";
+	char buffer[1024*1024] = "insert into shares (userid, workerid, coinid, jobid, pid, valid, extranonce1, difficulty, share_diff, time, algo, error, solo, blocknumber) values ";
 	g_list_worker.Enter();
 
 	for(CLI li = g_list_worker.first; li; li = li->next)
@@ -143,9 +172,9 @@ void share_write(YAAMP_DB *db)
 		}
 
 		if(count) strcat(buffer, ",");
-		sprintf(buffer+strlen(buffer), "(%d, %d, %d, %d, %d, %d, %d, %f, %f, %d, '%s', %d, %d)",
+		sprintf(buffer+strlen(buffer), "(%d, %d, %d, %d, %d, %d, %d, %f, %f, %d, '%s', %d, %d, %d)",
 			worker->userid, worker->workerid, worker->coinid, worker->remoteid, pid,
-			worker->valid, worker->extranonce1, worker->difficulty, worker->share_diff, now, g_stratum_algo, worker->error_number, worker->solo);
+			worker->valid, worker->extranonce1, worker->difficulty, worker->share_diff, now, g_stratum_algo, worker->error_number, worker->solo, worker->height);
 
 		// todo: link max_ttf ?
 		if((now - worker->ntime) > 15*60 || worker->ntime > now) {
@@ -156,7 +185,7 @@ void share_write(YAAMP_DB *db)
 		{
 			db_query(db, buffer);
 
-			strcpy(buffer, "insert into shares (userid, workerid, coinid, jobid, pid, valid, extranonce1, difficulty, share_diff, time, algo, error, solo) values ");
+			strcpy(buffer, "insert into shares (userid, workerid, coinid, jobid, pid, valid, extranonce1, difficulty, share_diff, time, algo, error, solo, blocknumber) values ");
 			count = 0;
 		}
 
