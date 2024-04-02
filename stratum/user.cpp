@@ -44,6 +44,7 @@ void db_add_user(YAAMP_DB *db, YAAMP_CLIENT *client)
 
 	bool guest = false;
 	int gift = -1;
+	client->solo = false;
 
 	std::string symbol;
 	std::vector<std::string> commandlist;
@@ -62,6 +63,9 @@ void db_add_user(YAAMP_DB *db, YAAMP_CLIENT *client)
 			}
 			else if (command.at(0) == "s") {
 				symbol = command.at(1);
+			}
+			else if (command.at(0) == "m") {
+				if (command.at(1) == "solo") client->solo = true;
 			}
 			// set list of specific coins to mine only
 			else if (command.at(0) == "mc") {
@@ -203,7 +207,7 @@ void db_update_workers(YAAMP_DB *db)
 		if(client->deleted) continue;
 		if(!client->workerid) continue;
 
-		if(client->speed < 0.00001)
+		if(client->speed < YAAMP_CLIENT_MINSPEED)
 		{
 			clientlog(client, "speed %f", client->speed);
 			shutdown(client->sock->sock, SHUT_RDWR);

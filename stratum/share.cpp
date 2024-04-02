@@ -81,14 +81,7 @@ static void share_add_worker(YAAMP_CLIENT *client, YAAMP_JOB *job, bool valid, c
 	//	client->source->speed += client->difficulty_actual / g_current_algo->diff_multiplier * 42;
 	}
 
-	if(strstr(client->password, "m=solo"))
-	{
-		worker->solo = true;
-	}
-	else
-	{
-		worker->solo = false;
-	}
+	worker->solo = client->solo;
 
 	g_list_worker.Leave();
 }
@@ -218,7 +211,7 @@ void share_prune(YAAMP_DB *db)
 void block_prune(YAAMP_DB *db)
 {
 	int count = 0;
-	char buffer[128*1024] = "insert into blocks (height, blockhash, coin_id, userid, workerid, category, difficulty, difficulty_user, time, algo, segwit) values ";
+	char buffer[128*1024] = "insert into blocks (height, blockhash, coin_id, userid, workerid, category, difficulty, difficulty_user, time, algo, segwit,solo) values ";
 
 	g_list_block.Enter();
 	for(CLI li = g_list_block.first; li; li = li->next)
@@ -237,9 +230,9 @@ void block_prune(YAAMP_DB *db)
 		}
 
 		if(count) strcat(buffer, ",");
-		sprintf(buffer+strlen(buffer), "(%d, '%s', %d, %d, %d, 'new', %f, %f, %d, '%s', %d)",
+		sprintf(buffer+strlen(buffer), "(%d, '%s', %d, %d, %d, 'new', %f, %f, %d, '%s', %d, %d)",
 			block->height, block->hash, block->coinid, block->userid, block->workerid,
-			block->difficulty, block->difficulty_user, (int)block->created, g_stratum_algo, block->segwit?1:0);
+			block->difficulty, block->difficulty_user, (int)block->created, g_stratum_algo, block->segwit?1:0, block->solo?1:0);
 
 		object_delete(block);
 		count++;
@@ -249,7 +242,7 @@ void block_prune(YAAMP_DB *db)
 	if(count) db_query(db, buffer);
 }
 
-void block_add(int userid, int workerid, int coinid, int height, double diff, double diff_user, const char *h1, const char *h2, int segwit)
+void block_add(int userid, int workerid, int coinid, int height, double diff, double diff_user, const char *h1, const char *h2, int segwit, bool solo)
 {
 	YAAMP_BLOCK *block = new YAAMP_BLOCK;
 	memset(block, 0, sizeof(YAAMP_BLOCK));
@@ -262,6 +255,7 @@ void block_add(int userid, int workerid, int coinid, int height, double diff, do
 	block->difficulty = diff;
 	block->difficulty_user = diff_user;
 	block->segwit = segwit;
+	block->solo = solo;
 
 	strcpy(block->hash1, h1);
 	strcpy(block->hash2, h2);

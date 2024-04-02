@@ -230,7 +230,7 @@ static void client_do_submit(YAAMP_CLIENT *client, YAAMP_JOB *job, YAAMP_JOB_VAL
 				debuglog("*** ACCEPTED %s %d (+1)\n", coind_aux->name, coind_aux->height);
 
 				block_add(client->userid, client->workerid, coind_aux->id, coind_aux->height, target_to_diff(coin_target_aux),
-					target_to_diff(hash_int), current_aux->hash, "", 0);
+					target_to_diff(hash_int), current_aux->hash, "", 0,client->solo);
 			}
 
 			else
@@ -322,7 +322,7 @@ static void client_do_submit(YAAMP_CLIENT *client, YAAMP_JOB *job, YAAMP_JOB_VAL
 
 			block_add(client->userid, client->workerid, coind->id, templ->height,
 				target_to_diff(coin_target), target_to_diff(hash_int),
-				hash1, submitvalues->hash_be, templ->has_segwit_txs);
+				hash1, submitvalues->hash_be, templ->has_segwit_txs, client->solo);
 
 			if(!strcmp("DCR", coind->rpcencoding)) {
 				// delay between dcrd and dcrwallet

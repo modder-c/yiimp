@@ -539,7 +539,7 @@ void *client_thread(void *p)
 	memset(client, 0, sizeof(YAAMP_CLIENT));
 
 	client->reconnectable = true;
-	client->speed = 1;
+	client->speed = YAAMP_CLIENT_MINSPEED * 10;
 	client->created = time(NULL);
 	client->last_best = time(NULL);
 

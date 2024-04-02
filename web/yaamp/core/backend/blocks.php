@@ -10,31 +10,26 @@ function BackendBlockNew($coin, $db_block)
 	if(!$reward || $db_block->algo == 'PoS' || $db_block->algo == 'MN') return;
 	if($db_block->category == 'stake' || $db_block->category == 'generated') return;
 
-	$is_shared = getdbocount(
-		'db_workers',
-		"algo=:algo and userid=:userid and id=:workerid and password not like '%m=solo%'",
-		array(
-			':algo'=>$db_block->algo,
-			':userid'=>$db_block->userid,
-			':workerid'=>$db_block->workerid
-		)
-	);
-	$is_solo = getdbocount(
-		'db_workers',
-		"algo=:algo and userid=:userid and id=:workerid and password like '%m=solo%'", 
-		array(
-			':algo'=>$db_block->algo,
-			':userid'=>$db_block->userid,
-			':workerid'=>$db_block->workerid
-		)
-	);
-	// $is_shared = !$is_solo;
+	if (is_null($db_block->solo)) {
+		$count_solo_worker = getdbocount(
+			'db_workers',
+			"algo=:algo and userid=:userid and id=:workerid and password like '%m=solo%'", 
+			array(
+				':algo'=>$db_block->algo,
+				':userid'=>$db_block->userid,
+				':workerid'=>$db_block->workerid
+			)
+		);
+		$is_solo = ($count_solo_worker > 0);
+	} else {
+		$is_solo = ($db_block->solo > 0);
+	}
 
 	$sqlCond =	" blocknumber <= ".intval($db_block->height).
 				" AND blockrewarded IS NULL".
 				" AND coinid = ".intval($coin->id);
 
-	if ($is_shared)
+	if (!$is_solo)
 	{
 		debuglog("Shared Mining Found Block : $coin->id height $db_block->height with $db_block->userid");
 
@@ -52,7 +47,7 @@ function BackendBlockNew($coin, $db_block)
 			dborun("DELETE FROM shares WHERE algo=:algo AND workerid=:workerid AND $sqlCond",array(':algo'=>$coin->algo,':workerid'=>$solo_worker->id));
 		}
 
-		$sqlCond .= "AND valid = 1";
+		$sqlCond .= " AND valid = 1";
 
 		$total_hash_power = dboscalar("SELECT SUM(difficulty) FROM shares WHERE algo=:algo AND $sqlCond", array(':algo'=>$coin->algo));
 		if(!$total_hash_power) return;
@@ -115,8 +110,7 @@ function BackendBlockNew($coin, $db_block)
 			$db_block->save();
 		}
 	}
-	
-	else if ($is_solo) 
+	else 
 	{
 		debuglog("Solo Mining Found Block : $coin->id height $db_block->height with $db_block->userid");
 
@@ -168,15 +162,18 @@ function BackendBlockNew($coin, $db_block)
 	
 	// todo: optimize all queries by re-ordering where-conditions to lower occurence of possible mysql deadlock-error
 	try {
-		dborun("UPDATE shares SET blocknumber = ".$db_block->height.", blockrewarded = ".$db_block->height." WHERE algo=:algo AND $sqlCond",
+		dborun("DELETE FROM shares WHERE algo=:algo AND $sqlCond AND solo".(($is_solo)?"=1":"!=1"),
 				array(':algo'=>$coin->algo));
-
+//		dborun("UPDATE shares SET blocknumber = ".$db_block->height.", blockrewarded = ".$db_block->height." WHERE algo=:algo AND $sqlCond AND solo".(($is_solo)?"=1":"!=1"),
+//				array(':algo'=>$coin->algo));
 	} catch (CDbException $e) {
 
 		debuglog("unable to update shares $sqlCond retrying...");
 		sleep(1);
-		dborun("UPDATE shares SET blocknumber = ".$db_block->height.", blockrewarded = ".$db_block->height." WHERE algo=:algo AND $sqlCond",
+		dborun("DELETE FROM shares WHERE algo=:algo AND $sqlCond AND solo".(($is_solo)?"=1":"!=1"),
 				array(':algo'=>$coin->algo));
+//		dborun("UPDATE shares SET blocknumber = ".$db_block->height.", blockrewarded = ".$db_block->height." WHERE algo=:algo AND $sqlCond AND solo".(($is_solo)?"=1":"!=1"),
+//				array(':algo'=>$coin->algo));
 		// [errorInfo] => array(0 => 'HY000', 1 => 1205, 2 => 'Lock wait timeout exceeded; try restarting transaction')
 		// [*:message] => 'CDbCommand failed to execute the SQL statement: SQLSTATE[HY000]: General error: 1205 Lock wait timeout exceeded; try restarting transaction'
 	} 
