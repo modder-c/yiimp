@@ -38,6 +38,7 @@ function BackendCoinsUpdate()
 //		debuglog("doing $coin->name");
 
 		$remote = new WalletRPC($coin);
+		if(!$remote) continue;
 
 		$info = $remote->getinfo();
 		if(!$info && $coin->enable)
@@ -308,6 +309,8 @@ function BackendCoinsUpdate()
 				$coin->actual_ttf = percent_feedback($coin->actual_ttf, $ttf, 5);
 				$coin->last_network_found = time();
 			}
+
+			$coin->block_height = $info['blocks'];
 		}
 		else {
 			debuglog($coin->symbol." wallet is missing blocks in info-array");
