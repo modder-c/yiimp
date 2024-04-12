@@ -1,4 +1,4 @@
-FROM php:8.1-apache AS baseimage
+FROM ubuntu:22.04 AS baseimage
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -6,20 +6,18 @@ RUN set -xe \
     && : "---------- Fix possible vulnerabilities ----------" \
     && apt-get update && apt-get dist-upgrade -y \
     && : "---------- add tools ----------" \
-    && apt-get install -y git dumb-init supervisor cron logrotate vim less nano mc memcached haproxy \
+    && apt-get install -y git dumb-init supervisor cron logrotate vim less nano mc memcached haproxy apache2 libapache2-mod-php \
     && : "---------- add build-tools ----------" \
     && apt-get install -y automake autotools-dev build-essential libtool libasan6 \
     && : "---------- Persistent dependencies ----------" \
     && apt-get install -y libgd-dev libicu-dev libmariadb-dev-compat libxml2-dev libonig-dev libcurl4-openssl-dev libssl-dev libxslt1-dev libzip-dev libz-dev libmemcached-dev libgmp-dev \
     && : "---------- php extensions ----------" \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) bcmath curl exif gd intl opcache pcntl mysqli pdo_mysql soap shmop sysvshm sysvsem sysvmsg xml xsl zip \
-    && pecl install memcache && docker-php-ext-enable memcache \
+    && apt-get install -y php-bcmath php-curl php-exif php-gd php-intl php-memcache php-opcache php-mbstring php-mysqli php-soap php-shmop php-sysvshm php-sysvsem php-sysvmsg php-xml php-xsl php-zip \
     && apt-get clean
 
 RUN set -xe \
-    && : "---------- Copy config ----------" \
-    && mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
+#    && : "---------- Copy config ----------" \
+#    && mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
     && : "---------- Modify apache config ----------" \
     && a2enmod rewrite
 
@@ -40,8 +38,11 @@ RUN set -xe \
     && : "---------- changes only on devel env e.g. enable xdebug ----------"
 
 # Install Xdebug from source
-COPY /contrib/xdebug-3.3.1.tar.gz /tmp/
-RUN cd /tmp && tar -xvzf xdebug-3.3.1.tar.gz && cd xdebug-3.3.1 && ./rebuild.sh
+#COPY /contrib/xdebug-3.3.1.tar.gz /tmp/
+#RUN cd /tmp && tar -xvzf xdebug-3.3.1.tar.gz && cd xdebug-3.3.1 && ./rebuild.sh
+RUN set -xe \
+    && : "---------- Install Xdebug from apt repo ----------" \
+    && apt-get install -y php-xdebug
 
 COPY /config/xdebug.ini /usr/local/etc/php/conf.d/
 
