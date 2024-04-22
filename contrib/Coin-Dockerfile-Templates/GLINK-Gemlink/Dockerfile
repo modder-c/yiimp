@@ -8,7 +8,7 @@ RUN apt-get update && \
     automake autotools-dev build-essential dh-autoreconf \
     ca-certificates git \
     libboost-chrono-dev libboost-filesystem-dev libboost-program-options-dev libboost-system-dev libboost-test-dev libboost-thread-dev libevent-dev \
-    libssl-dev libcurl4-openssl-dev libgmp-dev libsodium-dev libz-dev libdb-dev libdb++-dev bsdmainutils curl libsqlite3-dev \
+    libssl-dev libcurl4-openssl-dev libgmp-dev libsodium-dev libz-dev libdb-dev libdb++-dev bsdmainutils curl libsqlite3-dev libtinfo5\
     libtool pkg-config && \
     apt-get install -y --no-install-recommends mc psmisc wget protobuf-compiler libminiupnpc-dev g++ curl cmake bison libevent-dev libboost-dev libxml2-dev python3 flex dumb-init && \
     apt-get clean
@@ -29,7 +29,7 @@ RUN git checkout $CURRENT_GITHUB_COMMIT
 COPY docker.patch /tmp/
 RUN patch -p1 < /tmp/docker.patch
 
-RUN zcutil/build.sh --disable-tests && \
+RUN zcutil/build.sh && \
     strip src/gemlinkd && cp src/gemlinkd /usr/bin && \
     cd / && rm /gemlink -rf && \
     rm ~/.cache -rf && rm ~/.ccache -rf && rm ~/.cargo -rf

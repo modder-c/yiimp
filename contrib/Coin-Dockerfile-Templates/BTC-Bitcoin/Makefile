@@ -1,7 +1,7 @@
 # change image name
-image_name=digibyte
+image_name=bitcoin
 # version tag
-version=v7.17.3
+version=v27.0
 # local storage for container dumps
 container_savepath=${CONTAINER_SAVEPATH}
 
@@ -12,8 +12,8 @@ STRATUM_UPDATEPASS=tu8tu5
 walletuserid=2000
 walletgroupid=2000
 user_path=/home/walletuser
-wallet_directory=.digibyte
-wallet_daemon=digibyted
+wallet_directory=.bitcoin
+wallet_daemon=bitcoind
 
 #change container registry path and credentials
 registry=ghcr.io/<username>
@@ -21,7 +21,7 @@ registry_username=xxx
 registry_password=xxx
 
 gitclone:
-	git clone https://github.com/DigiByte-Core/digibyte
+	git clone https://github.com/bitcoin/bitcoin
 
 build:
 	podman build --tag ${image_name} --build-arg STRATUM_UPDATEPASS=${STRATUM_UPDATEPASS} --build-arg walletuserid=${walletuserid} --build-arg walletgroupid=${walletgroupid} -f Dockerfile

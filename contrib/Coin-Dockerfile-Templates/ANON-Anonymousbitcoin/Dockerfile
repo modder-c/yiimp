@@ -22,23 +22,22 @@ FROM baseimage1804 as coinwallet
 
 # Clone the source code.
 ARG STRATUM_UPDATEPASS
-ARG CURRENT_GITHUB_COMMIT=130c139fea94e2053aca3d588f5aa1d169a6de4a
+ARG CURRENT_GITHUB_COMMIT=ca3bf29cf625c00dc55dc687f3b6f5a1a993f7d8
 
-RUN git clone https://github.com/BTCGPU/BTCGPU
-WORKDIR /BTCGPU
+RUN git clone https://github.com/anonymousbitcoin/anon
+WORKDIR /anon
 
 # use the specific commit known to work
 RUN git checkout $CURRENT_GITHUB_COMMIT
 
 # apply patch if needed
-#COPY docker.patch /tmp/
-#RUN patch -p1 < /tmp/docker.patch
+COPY docker.patch /tmp/
+RUN patch -p1 < /tmp/docker.patch
 
-RUN cd depends && make FALLBACK_DOWNLOAD_PATH=http://10.0.2.2/depends/ && cd .. && \
-    ./autogen.sh && \
-    ./configure --prefix `pwd`/depends/x86_64-pc-linux-gnu --with-gui=no --disable-tests --disable-bench && make clean && make && \
-    strip src/bgoldd && cp src/bgoldd /usr/bin && \
-    cd / && rm /BTCGPU -rf && \
+RUN cd depends && make && cd .. && \
+    ./autogen.sh && ./configure --prefix `pwd`/depends/x86_64-unknown-linux-gnu --with-gui=no --disable-tests && make clean && make && \
+    strip src/anond && cp src/anond /usr/bin && \
+    cd / && rm /anon -rf && \
     rm ~/.cache -rf && rm ~/.ccache -rf && rm ~/.cargo -rf
 
 # blocknotify

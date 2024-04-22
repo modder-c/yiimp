@@ -1,4 +1,4 @@
-FROM ubuntu:18.04 as baseimage1804
+FROM ubuntu:22.04 as baseimage2204
 LABEL maintainer tpfuemp@github
 
 ENV DEBIAN_FRONTEND noninteractive
@@ -8,24 +8,19 @@ RUN apt-get update && \
     automake autotools-dev build-essential dh-autoreconf \
     ca-certificates git \
     libboost-chrono-dev libboost-filesystem-dev libboost-program-options-dev libboost-system-dev libboost-test-dev libboost-thread-dev libevent-dev \
-    libssl1.0-dev libgmp-dev libsodium-dev libz-dev bsdmainutils curl libsqlite3-dev \
+    libssl-dev libcurl4-openssl-dev libgmp-dev libsodium-dev libz-dev libdb-dev libdb++-dev bsdmainutils curl libsqlite3-dev \
     libtool pkg-config && \
-# 3. install db v4.8
-    apt-get install -y --no-install-recommends software-properties-common && \
-    add-apt-repository ppa:bitcoin/bitcoin && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends libdb4.8-dev libdb4.8++-dev && \
     apt-get install -y --no-install-recommends mc psmisc wget protobuf-compiler libminiupnpc-dev g++ curl cmake bison libevent-dev libboost-dev libxml2-dev python3 flex dumb-init && \
     apt-get clean
 
-FROM baseimage1804 as coinwallet
+FROM baseimage2204 as coinwallet
 
 # Clone the source code.
 ARG STRATUM_UPDATEPASS
-ARG CURRENT_GITHUB_COMMIT=130c139fea94e2053aca3d588f5aa1d169a6de4a
+ARG CURRENT_GITHUB_COMMIT=d82283950f5ff3b2116e705f931c6e89e5fdd0be
 
-RUN git clone https://github.com/BTCGPU/BTCGPU
-WORKDIR /BTCGPU
+RUN git clone https://github.com/bitcoin/bitcoin
+WORKDIR /bitcoin
 
 # use the specific commit known to work
 RUN git checkout $CURRENT_GITHUB_COMMIT
@@ -33,12 +28,11 @@ RUN git checkout $CURRENT_GITHUB_COMMIT
 # apply patch if needed
 #COPY docker.patch /tmp/
 #RUN patch -p1 < /tmp/docker.patch
-
-RUN cd depends && make FALLBACK_DOWNLOAD_PATH=http://10.0.2.2/depends/ && cd .. && \
+RUN cd depends && make && cd .. && \
     ./autogen.sh && \
-    ./configure --prefix `pwd`/depends/x86_64-pc-linux-gnu --with-gui=no --disable-tests --disable-bench && make clean && make && \
-    strip src/bgoldd && cp src/bgoldd /usr/bin && \
-    cd / && rm /BTCGPU -rf && \
+    ./configure --prefix `pwd`/depends/x86_64-pc-linux-gnu --with-gui=no --disable-tests --disable-bench --enable-cxx --disable-shared --with-pic CPPFLAGS=-DUSE_UPNP=0 && make clean && make && \
+    strip src/bitcoind && cp src/bitcoind /usr/bin && \
+    cd / && rm /bitcoin -rf && \
     rm ~/.cache -rf && rm ~/.ccache -rf && rm ~/.cargo -rf
 
 # blocknotify
