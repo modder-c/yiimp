@@ -131,6 +131,12 @@ echo CUFHtml::activeTextField($coin, 'mature_blocks', array('maxlength'=>32,'sty
 echo '<p class="formHint2">Required block count to mature</p>';
 echo CUFHtml::closeCtrlHolder();
 
+echo CUFHtml::openActiveCtrlHolder($coin, 'powlimit_bits');
+echo CUFHtml::activeLabelEx($coin, 'powlimit_bits');
+echo CUFHtml::activeTextField($coin, 'powlimit_bits', array('maxlength'=>32,'style'=>'width: 120px;'));
+echo '<p class="formHint2">number of leading \'0\' bits on powlimit (basehash for diff 1)</p>';
+echo CUFHtml::closeCtrlHolder();
+
 echo CUFHtml::openActiveCtrlHolder($coin, 'block_time');
 echo CUFHtml::activeLabelEx($coin, 'block_time');
 echo CUFHtml::activeTextField($coin, 'block_time', array('maxlength'=>32,'style'=>'width: 120px;'));
@@ -201,6 +207,12 @@ echo CUFHtml::activeCheckBox($coin, 'enable_rpcdebug');
 echo '<p class="formHint2">enable debug of rpc-communication from stratum to wallet</p>';
 echo CUFHtml::closeCtrlHolder();
 
+echo CUFHtml::openActiveCtrlHolder($coin, 'personalization');
+echo CUFHtml::activeLabelEx($coin, 'personalization');
+echo CUFHtml::activeTextField($coin, 'personalization', array('maxlength'=>100));
+echo '<p class="formHint2">personalization-string for equihash-coins<br>default "ZcashPoW" (see src/crypto/equihash.cpp for value)</p>';
+echo CUFHtml::closeCtrlHolder();
+
 echo CUFHtml::openActiveCtrlHolder($coin, 'max_miners');
 echo CUFHtml::activeLabelEx($coin, 'max_miners');
 echo CUFHtml::activeTextField($coin, 'max_miners', array('maxlength'=>32,'style'=>'width: 120px;'));
@@ -217,6 +229,12 @@ echo CUFHtml::openActiveCtrlHolder($coin, 'master_wallet');
 echo CUFHtml::activeLabelEx($coin, 'master_wallet');
 echo CUFHtml::activeTextField($coin, 'master_wallet', array('maxlength'=>200));
 echo '<p class="formHint2">The pool wallet address</p>';
+echo CUFHtml::closeCtrlHolder();
+
+echo CUFHtml::openActiveCtrlHolder($coin, 'wallet_zaddress');
+echo CUFHtml::activeLabelEx($coin, 'wallet_zaddress');
+echo CUFHtml::activeTextField($coin, 'wallet_zaddress', array('maxlength'=>200));
+echo '<p class="formHint2">zaddress for privacy-coins (zcash)</p>';
 echo CUFHtml::closeCtrlHolder();
 
 echo CUFHtml::openActiveCtrlHolder($coin, 'reward');

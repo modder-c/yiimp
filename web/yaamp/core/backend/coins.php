@@ -254,49 +254,59 @@ function BackendCoinsUpdate()
 			}
 		}
 
-			else if ($coin->symbol == 'ZEC' || $coin->rpcencoding == 'ZEC')
+		else if ($coin->symbol == 'ZEC' || $coin->rpcencoding == 'ZEC')
+		{
+			if($template && isset($template['coinbasetxn']))
 			{
-				if($template && isset($template['coinbasetxn']))
-				{
+				$blocksubsidy = $remote->getblocksubsidy();
+				$coin->reward = arraySafeVal($blocksubsidy,'miner',0);
+				$coin->charity_amount = arraySafeVal($blocksubsidy,'founders',0);
+	
+				if (!$coin->reward) {
 					// no coinbasevalue in ZEC blocktemplate :/
 					$txn = $template['coinbasetxn'];
 					$coin->charity_amount = arraySafeVal($txn,'foundersreward',0)/100000000;
 					$coin->reward = $coin->charity_amount * 4 + arraySafeVal($txn,'fee',0)/100000000;
-					// getmininginfo show current diff, getinfo the last block one
-					$mininginfo = $remote->getmininginfo();
-					$coin->difficulty = ArraySafeVal($mininginfo,'difficulty',$coin->difficulty);
-					//$target = decode_compact($template['bits']);
-					//$diff = target_to_diff($target); // seems not standard 0.358557563 vs 187989.937 in getmininginfo
-					//target 00000002c0930000000000000000000000000000000000000000000000000000 => 0.358557563 (bits 1d02c093)
-					//$diff = hash_to_difficulty($coin, $template['target']);
-					//debuglog("ZEC target {$template['bits']} -> $diff");
-				} else {
-					$coin->auto_ready = false;
-					$coin->errors = $remote->error;
 				}
-			}
 
-			else if ($coin->rpcencoding == 'DCR')
-			{
-				$wi = $remote->walletinfo();
-				$coin->auto_ready = ($coin->connections > 0 && arraySafeVal($wi,"daemonconnected"));
-				if ($coin->auto_ready && arraySafeVal($wi,"unlocked",false) == false) {
-					debuglog($coin->symbol." wallet is not unlocked!");
+				if(isset($template['masternode']) && arraySafeVal($template,'masternode_payments_enforced')) {
+					$coin->reward -= arraySafeVal($template['masternode'],'amount',0)/100000000;
+					$coin->hasmasternodes = true;
 				}
-			}
+				if(isset($template['payee_amount']) && arraySafeVal($template,'masternode_payments')) {
+					$coin->charity_amount = $template['payee_amount']/100000000;
+					$coin->reward -= $coin->charity_amount;
+				}
 
-			else
-			{
+				// getmininginfo show current diff, getinfo the last block one
+				$mininginfo = $remote->getmininginfo();
+				$coin->difficulty = ArraySafeVal($mininginfo,'difficulty',$coin->difficulty);
+			} else {
 				$coin->auto_ready = false;
 				$coin->errors = $remote->error;
 			}
+		}
 
-			if(strcasecmp($coin->errors, 'No more PoW blocks') == 0)
-			{
-				$coin->dontsell = true;
-				$coin->auto_ready = false;
+		else if ($coin->rpcencoding == 'DCR')
+		{
+			$wi = $remote->walletinfo();
+			$coin->auto_ready = ($coin->connections > 0 && arraySafeVal($wi,"daemonconnected"));
+			if ($coin->auto_ready && arraySafeVal($wi,"unlocked",false) == false) {
+				debuglog($coin->symbol." wallet is not unlocked!");
 			}
-//		}
+		}
+
+		else
+		{
+			$coin->auto_ready = false;
+			$coin->errors = $remote->error;
+		}
+
+		if(strcasecmp($coin->errors, 'No more PoW blocks') == 0)
+		{
+			$coin->dontsell = true;
+			$coin->auto_ready = false;
+		}
 
 		if (isset($info['blocks'])) {
 			if($coin->block_height != $info['blocks'])

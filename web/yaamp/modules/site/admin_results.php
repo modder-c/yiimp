@@ -113,7 +113,7 @@ foreach($coins as $coin)
 	echo "<br><span style='font-size: .8em'>$coin->rpcencoding <span style='background-color:$algo_color;'>&nbsp; ($coin->algo) &nbsp;</span></span></td>";
 
 	$difficulty = Itoa2($coin->difficulty, 3);
-	if ($difficulty > 1e20) $difficulty = '&nbsp;';
+	if ($coin->difficulty > 1e20) $difficulty = '&nbsp;';
 
 	if(!empty($coin->errors))
 		echo '<td align="right" style="font-size: .9em;" class="red" title="'.$coin->errors.'"><b>'.$difficulty.'</b><br/>'.$coin->block_height.'</td>';
