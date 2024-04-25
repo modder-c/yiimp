@@ -151,7 +151,7 @@ void db_update_algos(YAAMP_DB *db)
 
 	///////////////////////////////////////////////////////////////////////////////////////////
 
-	db_query(db, "select name, profit, rent, factor from algos");
+	db_query(db, "select name, profit, rent, factor, speedfactor, powlimit_bits from algos");
 
 	MYSQL_RES *result = mysql_store_result(&db->mysql);
 	if(!result) return;
@@ -165,6 +165,8 @@ void db_update_algos(YAAMP_DB *db)
 		if(row[1]) algo->profit = atof(row[1]);
 		if(row[2]) algo->rent = atof(row[2]);
 		if(row[3]) algo->factor = atof(row[3]);
+		if(row[4]) algo->speedfactor = atof(row[4]);
+		if(row[5]) algo->powlimit_bits = atoi(row[5]);
 	}
 
 	mysql_free_result(result);
@@ -205,7 +207,7 @@ void db_update_coinds(YAAMP_DB *db)
 		"hassubmitblock, txmessage, enable, auto_ready, algo, pool_ttf, charity_address, charity_amount, charity_percent, "
 		"reward_mul, symbol, auxpow, actual_ttf, network_ttf, usememorypool, hasmasternodes, algo, symbol2, "
 		"rpccurl, rpcssl, rpccert, account, multialgos, max_miners, max_shares, usesegwit, "
-		"auto_exchange, enable_rpcdebug "
+		"auto_exchange, enable_rpcdebug, personalization, powlimit_bits, block_time "
 		"FROM coins WHERE enable AND auto_ready AND algo='%s' ORDER BY index_avg", g_stratum_algo);
 
 	MYSQL_RES *result = mysql_store_result(&db->mysql);
@@ -325,6 +327,15 @@ void db_update_coinds(YAAMP_DB *db)
 
 		if(row[36]) coind->auto_exchange = atoi(row[36]) > 0;
 		if(row[37]) coind->rpcdebug = atoi(row[37]) > 0;
+
+		if(row[38]) strcpy(coind->personalization, row[38]);
+
+		// use powlimit from coin, if not set - algo, defaults to 32
+		if(row[39]) coind->powlimit_bits = atoi(row[39]);
+		if (!coind->powlimit_bits) coind->powlimit_bits = g_current_algo->powlimit_bits;
+		if (!coind->powlimit_bits) coind->powlimit_bits = 32;
+
+		if(row[40]) coind->blocktime = atoi(row[40]);
 
 		if(coind->usesegwit) g_stratum_segwit = true;
 

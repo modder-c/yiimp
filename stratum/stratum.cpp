@@ -62,6 +62,10 @@ uint64_t g_max_shares = 0;
 uint64_t g_shares_counter = 0;
 uint64_t g_shares_log = 0;
 
+// Equihash default
+uint32_t g_equihash_wn = EQUIHASH200_9_WN;
+uint32_t g_equihash_wk = EQUIHASH200_9_WK;
+
 bool g_allow_rolltime = true;
 time_t g_last_broadcasted = 0;
 YAAMP_DB *g_db = NULL;
@@ -142,6 +146,11 @@ YAAMP_ALGO g_algos[] =
 	{"dedal", dedal_hash, 0x100, 0, 0},
 	{"deep", deep_hash, 1, 0, 0},
 	{"dmd-gr", groestl_hash, 0x100, 0, 0}, /* diamond (double groestl) */
+	{"equihash", equi_hash, 0x100, 0, 0},
+	{"equihash125", equi_hash, 0x100, 0, 0},
+	{"equihash144", equi_hash, 0x100, 0, 0},
+	{"equihash192", equi_hash, 0x100, 0, 0},
+	{"equihash96", equi_hash, 0x100, 0, 0},
 	{"fresh", fresh_hash, 0x100, 0, 0},
 	{"geek", geek_hash, 1, 0, 0},
 	{"gr", gr_hash, 0x10000, 0, 0},
@@ -358,6 +367,24 @@ int main(int argc, char **argv)
 
 	stratumlogdate("starting stratum for %s on %s:%d\n",
 		g_current_algo->name, g_tcp_server, g_tcp_port);
+
+	// init Equihash parameters
+	if (!strcmp(g_current_algo->name,"equihash144")) {
+		g_equihash_wn = EQUIHASH144_5_WN;
+		g_equihash_wk = EQUIHASH144_5_WK;
+	}
+	else if (!strcmp(g_current_algo->name,"equihash192")) {
+		g_equihash_wn = EQUIHASH192_7_WN;
+		g_equihash_wk = EQUIHASH192_7_WK;
+	}
+	else if (!strcmp(g_current_algo->name,"equihash96")) {
+		g_equihash_wn = EQUIHASH96_5_WN;
+		g_equihash_wk = EQUIHASH96_5_WK;
+	}
+	else if (!strcmp(g_current_algo->name,"equihash125")) {
+		g_equihash_wn = EQUIHASH125_4_WN;
+		g_equihash_wk = EQUIHASH125_4_WK;
+	}
 
 	// ntime should not be changed by miners for these algos
 	g_allow_rolltime = strcmp(g_stratum_algo,"x11evo");

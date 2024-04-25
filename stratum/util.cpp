@@ -579,6 +579,15 @@ uint64_t diff_to_target(double difficulty)
 	return t;
 }
 
+uint64_t diff_to_target_coin(double difficulty, int powlimit_bits) {
+
+	uint64_t powlimit = (0xffffffffffffffff >> (powlimit_bits));
+
+	uint64_t target = (uint64_t) (powlimit / difficulty);
+
+	return target;
+}
+
 double target_to_diff(uint64_t target)
 {
 	if(!target) return 0;
@@ -587,34 +596,48 @@ double target_to_diff(uint64_t target)
 	return d;
 }
 
-uint64_t decode_compact(const char *input)
+void diff_to_target_equi(uint32_t* target, double diff) {
+	uint64_t m;
+	int k;
+
+//	if (!diff) return;
+//	diff = g_current_algo->diff_multiplier/diff;
+
+	for (k = 6; k > 0 && diff > 1.0; k--)
+		diff /= 4294967296.0;
+	m = (uint64_t)(4294901760.0 / diff);
+	if (m == 0 && k == 6)
+		memset(target, 0xff, 32);
+	else {
+		memset(target, 0, 32);
+		target[k + 1] = (uint32_t)(m >> 8);
+		target[k + 2] = (uint32_t)(m >> 40);
+		//memset(target, 0xff, 6*sizeof(uint32_t));
+		for (k = 0; k < 28 && ((uint8_t*)target)[k] == 0; k++)
+			((uint8_t*)target)[k] = 0x00;
+	}
+}
+
+double target_to_diff_coin(uint64_t target, int powlimit_bits)
+{
+	if(!target) return 0;
+
+	uint64_t powlimit = (0xffffffffffffffff >> (powlimit_bits));
+
+	double d = (double) powlimit / (double) target;
+	return d;
+}
+
+// shiftcount: 19 equihash , 25 bitcoin-clones
+uint64_t decode_compact(const char *input, int shiftdiff)
 {
 	uint64_t c = htoi64(input);
 
 	int nShift = (c >> 24) & 0xff;
-	double d = (double)0x0000ffff / (double)(c & 0x00ffffff);
 
-	while (nShift < 29)
-	{
-		d *= 256.0;
-		nShift++;
-	}
+	nShift -= shiftdiff;
+	uint64_t v = (c & 0xFFFFFF) << (8 * nShift);
 
-	while (nShift > 29)
-	{
-		d /= 256.0;
-		nShift--;
-	}
-
-	uint64_t v = 0x0000ffff00000000/d;
-//	debuglog("decode_compact %s -> %f -> %016llx\n", input, d, v);
-
-//	int nbytes = (c >> 24) & 0xFF;
-//
-//	nbytes -= 25;
-//	v = (c & 0xFFFFFF) << (8 * nbytes);
-//
-//	debuglog("decode_compact %s -> %016llx\n", input, v);
 	return v;
 }
 
@@ -667,6 +690,63 @@ uint64_t get_hash_difficulty(unsigned char *input)
 //	hexlify(toto, input, 32);
 //	debuglog("hash diff %s %016llx\n", toto, v);
 	return v;
+}
+
+uint64_t get_equihash_difficulty(unsigned char *input)
+{
+	unsigned char *p = (unsigned char *)input;
+
+	uint64_t v =
+		(uint64_t)p[31] << 56 |
+		(uint64_t)p[30] << 48 |
+		(uint64_t)p[29] << 40 |
+		(uint64_t)p[28] << 32 |
+		(uint64_t)p[27] << 24 |
+		(uint64_t)p[26] << 16 |
+		(uint64_t)p[25] << 8 |
+		(uint64_t)p[24] << 0;
+
+//	char toto[1024];
+//	hexlify(toto, input, 32);
+//	debuglog("hash diff %s %016llx\n", toto, v);
+	return v;
+}
+
+double target_to_diff_equi(uint32_t* target)
+{
+	uchar* tgt = (uchar*) target;
+	uint64_t m =
+		(uint64_t)tgt[30] << 24 |
+		(uint64_t)tgt[29] << 16 |
+		(uint64_t)tgt[28] << 8  |
+		(uint64_t)tgt[27] << 0;
+
+	if (!m)
+		return 0.;
+	else
+		return (double)0xffff0000UL/m;
+}
+
+/* compute nbits to get the network diff */
+double equi_network_diff(uint32_t *work_data)
+{
+	//KMD bits: "1e 015971",
+	//KMD target: "00 00 015971000000000000000000000000000000000000000000000000000000",
+	//KMD bits: "1d 686aaf",
+	//KMD target: "00 0000 686aaf0000000000000000000000000000000000000000000000000000",
+	uint32_t nbits = work_data[26];
+	uint32_t bits = (nbits & 0xffffff);
+	int16_t shift = (swab32(nbits) & 0xff);
+	shift = (31 - shift) * 8; // 8 bits shift for 0x1e, 16 for 0x1d
+	uint64_t tgt64 = swab32(bits);
+	tgt64 = tgt64 << shift;
+	// applog_hex(&tgt64, 8);
+	uint8_t net_target[32] = { 0 };
+	for (int b=0; b<8; b++)
+		net_target[31-b] = ((uint8_t*)&tgt64)[b];
+	// applog_hex(net_target, 32);
+	double d = target_to_diff_equi((uint32_t*)net_target);
+	return d;
 }
 
 unsigned int htoi(const char *s)

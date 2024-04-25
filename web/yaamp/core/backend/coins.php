@@ -92,25 +92,59 @@ function BackendCoinsUpdate()
 		$coin->stake = isset($info['stake'])? $info['stake'] : $coin->stake;
 		$coin->mint = dboscalar("select sum(amount) from blocks where coin_id=$coin->id and category='immature'");
 
-		if(empty($coin->master_wallet))
+		if(is_null($coin->master_wallet))
 		{
 			if ($coin->rpcencoding == 'DCR' && empty($coin->account)) $coin->account = 'default';
 			$coin->master_wallet = $remote->getaccountaddress($coin->account);
 		}
 
-		if(empty($coin->rpcencoding))
+		if((is_null($coin->rpcencoding)) || ($coin->rpcencoding == ''))
 		{
-			$difficulty = $remote->getdifficulty();
-			if(is_array($difficulty))
-				$coin->rpcencoding = 'POS';
-			else if ($coin->symbol == 'DCR')
-				$coin->rpcencoding = 'DCR';
-			else if ($coin->symbol == 'ETH')
-				$coin->rpcencoding = 'GETH';
-			else if ($coin->symbol == 'NIRO')
-				$coin->rpcencoding = 'NIRO';
-			else
-				$coin->rpcencoding = 'POW';
+			// load presets for various coins
+			switch ($coin->symbol) {
+				case 'ETH':
+					$coin->rpcencoding = 'GETH';
+					break;
+				case 'DCR':
+					$coin->rpcencoding = 'DCR';
+					break;
+				case 'NIRO':
+					$coin->rpcencoding = 'NIRO';
+					break;
+				case 'YEC':
+				case 'ZCL':
+				case 'ZEN':
+				case 'ZEC':
+					$coin->rpcencoding = 'ZEC'; $coin->personalization = 'ZcashPoW'; $coin->powlimit_bits = 13;
+					break;
+				case 'ARRR':
+				case 'HUSH':
+				case 'KMD':
+					$coin->rpcencoding = 'ZEC'; $coin->personalization = 'ZcashPoW'; $coin->powlimit_bits = 4;
+					break;
+				case 'ANON':
+					$coin->rpcencoding = 'ZEC'; $coin->personalization = 'AnonyPoW'; $coin->powlimit_bits = 1;
+					break;
+				case 'GLINK':
+					$coin->rpcencoding = 'ZEC'; $coin->personalization = 'sngemPoW'; $coin->powlimit_bits = 13;
+					break;
+				case 'BTCZ':
+					$coin->rpcencoding = 'ZEC'; $coin->personalization = 'BitcoinZ'; $coin->powlimit_bits = 13;
+					break;
+				case 'BTCZ':
+					$coin->rpcencoding = 'ZER'; $coin->personalization = 'ZERO_PoW'; $coin->powlimit_bits = 4;
+					break;
+					case 'BTG':
+					$coin->rpcencoding = 'POW'; $coin->personalization = 'BgoldPoW'; $coin->powlimit_bits = 13;
+					break;
+				default:
+					$difficulty = $remote->getdifficulty();
+					if(is_array($difficulty))
+						$coin->rpcencoding = 'POS';
+					else
+						$coin->rpcencoding = 'POW';
+					break;
+			}
 		}
 
 		if(is_null($coin->hassubmitblock))
@@ -314,7 +348,7 @@ function BackendCoinsUpdate()
 				$count = $info['blocks'] - $coin->block_height;
 				$ttf = $count > 0 ? (time() - $coin->last_network_found) / $count : 0;
 
-				if(empty($coin->actual_ttf)) $coin->actual_ttf = $ttf;
+				if(is_null($coin->actual_ttf)) $coin->actual_ttf = $ttf;
 
 				$coin->actual_ttf = percent_feedback($coin->actual_ttf, $ttf, 5);
 				$coin->last_network_found = time();
@@ -353,6 +387,7 @@ function BackendCoinsUpdate()
 
 		if($coin->difficulty)
 		{
+			$coin->network_hash = yaamp_coin_nethash($coin);
 			$coin->index_avg = $coin->reward * $coin->price * 10000 / $coin->difficulty;
 			if(!$coin->auxpow && $coin->rpcencoding == 'POW')
 			{
@@ -366,8 +401,9 @@ function BackendCoinsUpdate()
 			if($coin->network_ttf > 2147483647) $coin->network_ttf = 2147483647;
 		}
 
-		if(isset($pool_rate[$coin->algo]))
-			$coin->pool_ttf = intval($coin->difficulty * 0x100000000 / $pool_rate[$coin->algo]);
+		if(isset($pool_rate[$coin->algo])) {
+			$coin->pool_ttf = yaamp_coin_nethash($coin) / $pool_rate[$coin->algo] * (isset($coin->actual_ttf)?$coin->actual_ttf:0);
+		}
 		if($coin->pool_ttf > 2147483647) $coin->pool_ttf = 2147483647;
 
 		if(strstr($coin->image, 'http'))

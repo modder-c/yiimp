@@ -166,6 +166,8 @@ void coinbase_create(YAAMP_COIND *coind, YAAMP_JOB_TEMPLATE *templ, json_value *
 	char entime[32] = { 0 };
 	char commitment[128] = { 0 };
 
+	bool is_equihash = (strstr(g_current_algo->name, "equihash") == g_current_algo->name);
+
 	ser_number(templ->height, eheight);
 	ser_number(time(NULL), etime);
 	if(coind->pos) ser_string_be(templ->ntime, entime, 1);
@@ -182,6 +184,21 @@ void coinbase_create(YAAMP_COIND *coind, YAAMP_JOB_TEMPLATE *templ, json_value *
 	sprintf(script1, "%s%s%s08", eheight, templ->flags, etime);
 
 	char script2[32] = "506f6f6c4d696e652e78797a"; // "yiimp\0" in hex ascii
+
+	// init saplingroothash for equihash
+	templ->saplingroothash[0] =0;
+
+	int n = templ->height; int s;
+	for(int i=0; i<32; i++) {
+		char tmp[32];
+		s = n % 256; n /= 256;
+		sprintf(tmp, "%02x", s);
+		strcat(templ->saplingroothash, tmp);
+	}
+	string_be1(templ->saplingroothash);
+
+	// reset coinbase-string
+	templ->coinbase[0] = 0;
 
 	if(!coind->pos && !coind->isaux && templ->auxs_size)
 		coinbase_aux(templ, script2);
@@ -205,6 +222,61 @@ void coinbase_create(YAAMP_COIND *coind, YAAMP_JOB_TEMPLATE *templ, json_value *
 		sprintf(commitment, "0000000000000000%02x%s", (int) (strlen(coind->commitment)/2), coind->commitment);
 
 	json_int_t available = templ->value;
+
+	if (strcmp(coind->rpcencoding, "ZEC") == 0)	{
+		char eversion3[64] = "0400008085202f89";
+
+		sprintf(script1, "%s%s%s00", eheight, templ->flags, etime);
+		// nonce not included , set length to 0
+
+		// Pool identstring in coinbase-TX
+		sprintf(script2,"506f6f6c4d696e652e78797a00"); // "yiimp\0" in hex ascii
+
+		if(!coind->pos && !coind->isaux && templ->auxs_size)
+			coinbase_aux(templ, script2);
+
+		// nonce not included in coinbase of equihash-coins
+		int script_len = strlen(script1)/2 + strlen(script2)/2 + (is_equihash?0:8);
+		sprintf(templ->coinb1, "%s%s01"
+			"0000000000000000000000000000000000000000000000000000000000000000"
+			"ffffffff%02x%s", eversion3, entime, script_len, script1);
+
+		sprintf(templ->coinb2, "%s00000000", script2);
+
+		// segwit commitment, if needed
+		if (templ->has_segwit_txs)
+			sprintf(commitment, "0000000000000000%02x%s", (int) (strlen(coind->commitment)/2), coind->commitment);
+
+		// add coinbase-tx
+		job_pack_tx(coind, templ->coinb2, available, NULL);
+
+		const char *finalsaplingroothash = json_get_string(json_result, "finalsaplingroothash");
+		if (finalsaplingroothash)
+			sprintf(templ->saplingroothash, "%s", finalsaplingroothash);
+		else
+			sprintf(templ->saplingroothash, "0000000000000000000000000000000000000000000000000000000000000000");
+
+		json_value* template_coinbase = json_get_array(json_result, "coinbasetxn");
+		if (template_coinbase) {
+			const char *coinbasetxn_data = json_get_string(template_coinbase, "data");
+			sprintf(templ->coinbase, "%s", coinbasetxn_data);
+//			debuglog("coinbase %s\n",templ->coinbase);
+		}
+
+		// temp. analyze template without creating coinbase tx - using precreated tx
+		json_int_t masternode_amount = json_get_int(json_result, "payee_amount");
+
+		bool masternode_payments = json_get_bool(json_result, "masternode_payments");
+		bool masternode_enforce = json_get_bool(json_result, "enforce_masternode_payments");
+
+		if (masternode_payments && masternode_enforce && masternode_amount) {
+			available -= masternode_amount;
+		}
+
+		coind->reward = (double)available/100000000*coind->reward_mul;
+		//debuglog("%s %d dests %s\n", coind->symbol, npayees, script_dests);
+		return;
+	}
 
 	// sample coins using mandatory dev/foundation fees
 	if(strcmp(coind->symbol, "EGC") == 0) {

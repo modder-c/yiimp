@@ -16,6 +16,8 @@ struct YAAMP_ALGO
 	double diff_multiplier;
 	double factor;
 	YAAMP_HASH_FUNCTION merkle_func;
+	double speedfactor;
+	int powlimit_bits;
 
 	double profit;
 	double rent;

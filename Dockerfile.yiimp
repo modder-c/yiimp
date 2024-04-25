@@ -10,7 +10,7 @@ RUN set -xe \
     && : "---------- add build-tools ----------" \
     && apt-get install -y automake autotools-dev build-essential libtool libasan6 \
     && : "---------- Persistent dependencies ----------" \
-    && apt-get install -y libgd-dev libicu-dev libmariadb-dev-compat libxml2-dev libonig-dev libcurl4-openssl-dev libssl-dev libxslt1-dev libzip-dev libz-dev libmemcached-dev libgmp-dev \
+    && apt-get install -y libgd-dev libicu-dev libmariadb-dev-compat libxml2-dev libonig-dev libcurl4-openssl-dev libssl-dev libxslt1-dev libzip-dev libz-dev libmemcached-dev libgmp-dev libsodium-dev \
     && : "---------- php extensions ----------" \
     && apt-get install -y php-bcmath php-curl php-exif php-gd php-intl php-memcache php-opcache php-mbstring php-mysqli php-soap php-shmop php-sysvshm php-sysvsem php-sysvmsg php-xml php-xsl php-zip \
     && apt-get clean

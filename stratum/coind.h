@@ -60,6 +60,8 @@ public:
 	double price;
 	int pool_ttf;
 	int actual_ttf;
+	int blocktime;
+	int powlimit_bits;
 
 	bool isaux;
 	pthread_mutex_t aux_mutex;
@@ -79,6 +81,8 @@ public:
 
 	bool auto_exchange;
 	bool rpcdebug;
+
+	char personalization[1024];
 
 	YAAMP_JOB *job;
 //	YAAMP_JOB_TEMPLATE *templ;

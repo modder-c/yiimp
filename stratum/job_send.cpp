@@ -32,6 +32,47 @@ static void job_mining_notify_buffer(YAAMP_JOB *job, char *buffer)
 		return;
 	}
 
+	if (strstr(g_current_algo->name, "equihash") == g_current_algo->name)
+	{
+		static char version_reversed[1024];
+		static char prev_hash_reversed[1024];
+		static char merkleroot_reversed[1024];
+		static char finalsaplingroot_reversed[1024];
+		static char time_reversed[1024];
+		static char bits_reversed[1024];
+
+		static char equihash_params[1024];
+		static char equihash_personalization[1024];
+
+		sprintf(equihash_params, "%i_%i", g_equihash_wn, g_equihash_wk);
+
+		strcpy(equihash_personalization,
+				((strlen(job->coind->personalization)>0)?job->coind->personalization:"ZcashPoW"));
+
+		string_be(templ->version, version_reversed);
+		string_be(templ->prevhash_hex, prev_hash_reversed);
+//		string_be(templ->merkleroot, merkleroot_reversed);
+		sprintf(merkleroot_reversed, "%s", templ->merkleroot);
+		string_be(templ->saplingroothash, finalsaplingroot_reversed);
+		string_be(templ->ntime, time_reversed);
+		string_be(templ->nbits, bits_reversed);
+
+
+		char job_message[1024];
+		sprintf(job_message,"{\"id\":null,\"method\":\"client.show_message\",\"params\":[\"equihash %s block %i\"]}\n",
+				(job->coind)?"unknown":job->coind->symbol,
+				templ->height);
+
+		//[2017-12-07 13:53:12] < {"id":null,"method":"client.show_message","params":["equihash KMD block 611840"]}
+
+		sprintf(buffer, "%s{\"id\":null,\"method\":\"mining.notify\",\"params\":["
+				"\"%x\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",true,\"%s\",\"%s\"]}\n", job_message,
+				job->id, version_reversed, prev_hash_reversed, merkleroot_reversed,
+				finalsaplingroot_reversed, time_reversed, bits_reversed,
+				equihash_params, equihash_personalization);
+		return;
+	}
+
 	// standard stratum
 	sprintf(buffer, "{\"id\":null,\"method\":\"mining.notify\",\"params\":[\"%x\",\"%s\",\"%s\",\"%s\",[%s],\"%s\",\"%s\",\"%s\",true]}\n",
 		job->id, templ->prevhash_be, templ->coinb1, templ->coinb2, templ->txmerkles, templ->version, templ->nbits, templ->ntime);
@@ -160,14 +201,16 @@ void job_broadcast(YAAMP_JOB *job)
 
 	///////////////////////
 
-	uint64_t coin_target = decode_compact(templ->nbits);
+	bool is_equihash = (strstr(g_current_algo->name, "equihash") == g_current_algo->name);
+
+	uint64_t coin_target = decode_compact(templ->nbits, (is_equihash)? 19 : 25);
+
 	if (templ->nbits && !coin_target) coin_target = 0xFFFF000000000000ULL; // under decode_compact min diff
 	double coin_diff = target_to_diff(coin_target);
 
-	// hotfix: shift speed by 1000000 - given in MHs , until speedcalc has been fixed
-	humanize_double(formated_jobspeed, sizeof("-XXX.YPh/s"), job->speed*1000000, "h/s",
+	humanize_double(formated_jobspeed, sizeof("-XXX.YPh/s"), job->speed, "h/s",
 					HN_AUTOSCALE, HN_NOSPACE | HN_DECIMAL);
-	humanize_double(formated_coinspeed, sizeof("-XXX.YPh/s"), job->maxspeed*1000000, "h/s",
+	humanize_double(formated_coinspeed, sizeof("-XXX.YPh/s"), job->maxspeed, "h/s",
 					HN_AUTOSCALE, HN_NOSPACE | HN_DECIMAL);
 
 	debuglog("%s %d - diff %.9f job %x to %d/%d/%d clients, hash %s / %s in %.1f ms\n", job->name,

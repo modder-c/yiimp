@@ -14,9 +14,13 @@ struct YAAMP_JOB_VALUES
 	char coinbase[4*1024];
 	char merkleroot_be[1024];
 
-	char header[1024];
-	char header_be[1024];
-	unsigned char header_bin[1024];
+	char header[8192];
+	char header_be[8192];
+	unsigned char header_bin[8192];
+
+	char solution_hex[4096];
+	char solution_be[4096];
+	unsigned char solution_bin[4096];
 
 	char hash_hex[1024];
 	char hash_be[1024];
@@ -53,15 +57,19 @@ struct YAAMP_JOB_TEMPLATE
 
 	json_int_t value;
 
-	char coinb1[4*1024];
-	char coinb2[4*1024];
-	char coinb1_p2wpkh[4*1024];
-	char coinb2_p2wpkh[4*1024];
+	char coinb1[8*1024];
+	char coinb2[8*1024];
+	char coinb1_p2wpkh[8*1024];
+	char coinb2_p2wpkh[8*1024];
 	bool is_p2wpkh;
 	char coinforsubmitb1[4*1024];
 	char coinforsubmitb2[4*1024];
 	bool isbitcash;
 	char mweb[8*1024];
+
+	char saplingroothash[256];
+	char coinbase[4096];
+	char merkleroot[4096];
 
 	char header[256];
 

@@ -52,6 +52,7 @@ typedef void (*YAAMP_HASH_FUNCTION)(const char *, char *, uint32_t);
 
 #define YAAMP_NONCE_SIZE		4
 #define YAAMP_RES_NONCE_SIZE	(32 - YAAMP_NONCE_SIZE)
+#define YAAMP_EQUIHASH_NONCE_SIZE   28
 #define YAAMP_EXTRANONCE2_SIZE	4
 
 #define YAAMP_HASHLEN_STR		65
@@ -111,6 +112,9 @@ extern bool g_debuglog_remote;
 
 extern uint64_t g_max_shares;
 extern uint64_t g_shares_counter;
+
+extern uint32_t g_equihash_wk;
+extern uint32_t g_equihash_wn;
 
 extern bool g_allow_rolltime;
 extern time_t g_last_broadcasted;
@@ -261,3 +265,4 @@ void sha3d_hash_hex(const char *input, char *output, unsigned int len);
 #include "algos/sha3d.h"
 #include "algos/sha256dt.h"
 #include "algos/skydoge.h"
+#include "algos/equihash.h"

@@ -210,7 +210,45 @@ function take_yaamp_fee($v, $algo, $percent=-1)
 
 function yaamp_hashrate_constant($algo=null)
 {
-	return pow(2, 42);		// 0x400 00000000
+	switch ($algo) {
+		case 'equihash96':
+		case 'equihash125':
+		case 'equihash144':
+		case 'equihash192':
+		case 'equihash':
+			$target = 0x0000000004000000;
+			break;
+		default:
+			$target = 0x0000040000000000; // pow(2, 42);
+			break;
+	}
+	return $target;
+}
+
+function yaamp_hashrate_constant_coin($algo=null, $coinid=null)
+{
+    $coin_powlimit_bits = null;
+    
+    if (!is_null($coinid)) {
+        $coin = getdbo('db_coins', $coinid);
+        if (($coin) && (!is_null($coin->powlimit_bits))) {
+            $coin_powlimit_bits = $coin->powlimit_bits;
+        }
+    }
+    
+    if (is_null($coin_powlimit_bits)) {
+        $algo_list = yaamp_get_algo_list(false);
+        foreach($algo_list as $current_algo) {
+            if ($current_algo['name'] != $algo) continue;
+            $coin_powlimit_bits = $current_algo['powlimit_bits'];
+        }
+    }
+    
+    if (is_null($coin_powlimit_bits)) {
+        $coin_powlimit_bits = 32;
+    }
+    
+    return pow(2, $coin_powlimit_bits);
 }
 
 function yaamp_hashrate_step()
@@ -218,11 +256,75 @@ function yaamp_hashrate_step()
 	return 300;
 }
 
-function yaamp_profitability($coin)
+function yaamp_coin_nethash($coin , $coin_powlimit_bits = null , $coin_difficulty = null, $coin_reward = null, $coin_price = null) {
+
+	/*
+	$network_hash = controller()
+	->memcache
+	->get("yiimp-nethashrate-{$coin->symbol}");
+	if (!$network_hash)
+	{
+		$remote = new WalletRPC($coin);
+		if ($remote) $info = $remote->getmininginfo();
+		if (isset($info['networkhashps']))
+		{
+			$network_hash = $info['networkhashps'];
+			controller()
+				->memcache
+				->set("yiimp-nethashrate-{$coin->symbol}", $info['networkhashps'], 60);
+		}
+		else if (isset($info['netmhashps']))
+		{
+			$network_hash = floatval($info['netmhashps']) * 1e6;
+			controller()
+				->memcache
+				->set("yiimp-nethashrate-{$coin->symbol}", $network_hash, 60);
+		}
+		if ($network_hash) return $network_hash;
+	}
+	*/
+
+    if (is_null($coin_powlimit_bits)) {
+        if (!is_null($coin->powlimit_bits)) {
+            $coin_powlimit_bits = $coin->powlimit_bits;
+        }
+        else {
+            $algo_list = yaamp_get_algo_list(false);
+            foreach($algo_list as $current_algo) {
+                 if ($current_algo['name'] != $coin->algo) continue;
+                 $coin_powlimit_bits = $current_algo['powlimit_bits'];
+            }
+        }
+    }
+    
+    if (is_null($coin_powlimit_bits)) {
+        $coin_powlimit_bits = 32;
+    }
+
+    $maxtarget_powlimit = pow(2, $coin_powlimit_bits);
+
+//    $speed = $coin->difficulty * $maxtarget_powlimit / yaamp_algo_mBTC_factor($coin->algo) / max(min($coin->actual_ttf, 60), 30);
+    $blocktime = $coin->block_time? $coin->block_time : max(min($coin->actual_ttf, 60), 30);
+    $speed = $coin->difficulty * $maxtarget_powlimit / $blocktime;
+
+    return $speed;
+}
+
+function yaamp_profitability($coin , $coin_difficulty = null, $coin_reward = null, $coin_price = null)
 {
-	if(!$coin->difficulty) return 0;
+    if (is_null($coin_difficulty)) $coin_difficulty = $coin->difficulty;
+    if(!$coin_difficulty) return 0;
+
+    if (is_null($coin_reward)) $coin_reward = $coin->reward;
+    if (is_null($coin_price)) $coin_price = $coin->price;
 
 	$btcmhd = 20116.56761169 / $coin->difficulty * $coin->reward * $coin->price;
+
+	$speed = yaamp_coin_nethash($coin);
+	$blocktime = $coin->block_time? $coin->block_time : max(min($coin->actual_ttf, 60), 30);
+	$reward_per_second = ($coin->reward * $coin_price) / $blocktime;
+	$btcmhd = 24*60*60 * $reward_per_second / $speed * 1000000;
+
 	if(!$coin->auxpow && $coin->rpcencoding == 'POW')
 	{
 		$listaux = getdbolist('db_coins', "enable and visible and auto_ready and auxpow and algo='$coin->algo'");
@@ -230,7 +332,12 @@ function yaamp_profitability($coin)
 		{
 			if(!$aux->difficulty) continue;
 
-			$btcmhdaux = 20116.56761169 / $aux->difficulty * $aux->reward * $aux->price;
+			// $btcmhdaux = 20116.56761169 / $aux->difficulty * $aux->reward * $aux->price;
+			$aux_speed = yaamp_coin_nethash($aux);
+			$aux_blocktime = $aux->block_time? $aux->block_time : max(min($aux->actual_ttf, 60), 30);
+			$aux_reward_per_second = ($aux->reward * $aux->price) / $aux_blocktime;
+			$btcmhdaux = 24*60*60 * $aux_reward_per_second / $aux_speed * 1000000;
+
 			$btcmhd += $btcmhdaux;
 		}
 	}

@@ -36,7 +36,16 @@ double coind_profitability(YAAMP_COIND *coind)
 
 double coind_nethash(YAAMP_COIND *coind)
 {
-	double speed = coind->difficulty * 0x100000000 / 1000000 / max(min(coind->actual_ttf, 60), 30);
+	int blocktime = (coind->blocktime)? coind->blocktime : max(min(coind->actual_ttf, 60), 30);
+	int powlimit_bits = 32;
+
+	if (coind->powlimit_bits) powlimit_bits = coind->powlimit_bits;
+	else {
+		if (g_current_algo->powlimit_bits) powlimit_bits = g_current_algo->powlimit_bits;
+	}
+
+	double speed = coind->difficulty * pow(2, powlimit_bits)/ blocktime;
+
 //	if(!strcmp(g_current_algo->name, "sha256")) speed *= 1000;
 
 	return speed;
