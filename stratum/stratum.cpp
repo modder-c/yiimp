@@ -66,10 +66,8 @@ uint64_t g_shares_counter = 0;
 uint64_t g_shares_log = 0;
 
 // Equihash default
-//uint32_t g_equihash_wn = EQUIHASH200_9_WN;
-//uint32_t g_equihash_wk = EQUIHASH200_9_WK;
-uint32_t g_equihash_wn = 1;
-uint32_t g_equihash_wk = 1;
+uint32_t g_equihash_wn = EQUIHASH200_9_WN;
+uint32_t g_equihash_wk = EQUIHASH200_9_WK;
 
 bool g_allow_rolltime = true;
 time_t g_last_broadcasted = 0;
