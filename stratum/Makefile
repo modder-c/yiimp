@@ -46,7 +46,9 @@ projectcode3:
 	$(MAKE) -C $(CODEDIR3)
 
 projectcode4:
+ifeq ($(wildcard $(CODEDIR4)/.libs/libsecp256k1.a), )
 	cd $(CODEDIR4) && chmod +x autogen.sh && ./autogen.sh && ./configure --enable-experimental --enable-module-ecdh --with-bignum=no --enable-endomorphism && $(MAKE)
+endif
 
 $(SOURCES): stratum.h util.h
 

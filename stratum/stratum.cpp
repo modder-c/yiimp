@@ -3,6 +3,9 @@
 #include <signal.h>
 #include <sys/resource.h>
 
+#include <string>
+#include <vector>
+
 CommonList g_list_coind;
 CommonList g_list_client;
 CommonList g_list_job;
@@ -63,8 +66,10 @@ uint64_t g_shares_counter = 0;
 uint64_t g_shares_log = 0;
 
 // Equihash default
-uint32_t g_equihash_wn = EQUIHASH200_9_WN;
-uint32_t g_equihash_wk = EQUIHASH200_9_WK;
+//uint32_t g_equihash_wn = EQUIHASH200_9_WN;
+//uint32_t g_equihash_wk = EQUIHASH200_9_WK;
+uint32_t g_equihash_wn = 1;
+uint32_t g_equihash_wk = 1;
 
 bool g_allow_rolltime = true;
 time_t g_last_broadcasted = 0;
@@ -354,6 +359,8 @@ int main(int argc, char **argv)
 	// re-init logfiles
 	closelogs(); initlog(g_stratum_algo);
 
+	validate_hashfunctions();
+	
 	g_current_algo = stratum_find_algo(g_stratum_algo);
 
 	if(!g_current_algo) yaamp_error("invalid algo");
@@ -571,4 +578,47 @@ void *stratum_thread(void *p)
 
 		pthread_detach(thread);
 	}
+}
+
+bool validate_hashfunctions() {
+    int len;
+	char input_hex[512]; char output_hex[8192];
+	char input_bin[512]; char output_bin[8192];
+	bool check_failure = false;
+
+	struct Checkdata {
+		string algoname;
+		YAAMP_HASH_FUNCTION hash_function;
+		string hashdata;
+		string inputdata;
+	};
+	std::vector<Checkdata> VectorCheckdata;
+
+	VectorCheckdata = {
+		// ZeroOneCoin Block 1136413
+		{ std::string("neoscrypt") , neoscrypt_hash , 	std::string("000000001c04534a1170d4ab8206660383fed56853e09d436cf74d1cf7659c40") , std::string("00000020e73e6b6c9e318f193adb76aeb01ffd508c48a83e30b5394c4291cf67010000005d1210c46d9aca742c1619d2928d87e5eedf731f082249ef4fa7a592e35a5169a8132c66bab3011d24a69b06") },
+		// Innova Block 4385783
+		{ std::string("tribus") ,	 tribus_hash , 		std::string("0000000073effdeee31dbbcc72a6a8aab9c6fc3abc65c184b91e913121529ed6") , std::string("06000000cc4dd52af9ce356116e04f1ae4973ed0e77f9f713d958266509daeba00000000b85a3f9fa0ec87b5b85cbb43a221f66fd2de0e05cef11f60f123f6d980f0f0bfe3811966fa60011d2bef40e6") },
+	};
+
+	for(auto CurrentCheckdata : VectorCheckdata)
+    {
+		strcpy(input_hex,CurrentCheckdata.inputdata.c_str());
+		len = strlen(input_hex) / 2;
+		binlify((unsigned char*)input_bin, input_hex);
+
+		CurrentCheckdata.hash_function(input_bin, output_bin, len);
+		hexlify(input_bin,(const unsigned char*)output_bin, 32);
+		string_be((const char*)input_bin, output_hex);
+		if (CurrentCheckdata.hashdata != std::string(output_hex)) {
+			if (!check_failure) { debuglog("hash-function validation failed\n"); check_failure = true; };
+			debuglog("validation for \"%s\" failed\n", CurrentCheckdata.algoname.c_str());
+			debuglog(" this   : %s\n", output_hex);
+			debuglog(" correct: %s\n", CurrentCheckdata.hashdata.c_str());
+		}
+	}
+
+	if (!check_failure) { debuglog("hash-function passed"); }
+
+	return check_failure;
 }

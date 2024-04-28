@@ -266,3 +266,5 @@ void sha3d_hash_hex(const char *input, char *output, unsigned int len);
 #include "algos/sha256dt.h"
 #include "algos/skydoge.h"
 #include "algos/equihash.h"
+
+bool validate_hashfunctions();
