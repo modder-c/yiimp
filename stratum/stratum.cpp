@@ -616,7 +616,7 @@ bool validate_hashfunctions() {
 		}
 	}
 
-	if (!check_failure) { debuglog("hash-function passed"); }
+	if (!check_failure) { debuglog("hash-function passed\n"); }
 
 	return check_failure;
 }

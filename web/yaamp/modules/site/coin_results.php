@@ -239,6 +239,11 @@ $balance     = isset($info['balance']) ? $info['balance'] : '';
 $txfee       = isset($info['paytxfee']) ? $info['paytxfee'] : '';
 $connections = isset($info['connections']) ? CHtml::link($info['connections'], '/site/peers?id=' . $coin->id) : '';
 $blocks      = isset($info['blocks']) ? $info['blocks'] : '';
+$zbalance    = null;
+
+if ((!is_null($coin->wallet_zaddress)) && (trim($coin->wallet_zaddress) != '')) {
+    $zbalance = $remote->z_getbalance(trim($coin->wallet_zaddress));
+}
 
 echo '<td>' . round_difficulty($coin->difficulty) . '</td>';
 if (!empty($errors))
@@ -246,9 +251,14 @@ if (!empty($errors))
 else
     echo "<td>$blocks</td>";
 
-echo '<td>' . altcoinvaluetoa($balance) . '</td>';
+echo '<td>' . altcoinvaluetoa($balance);
 
 $btc = bitcoinvaluetoa($balance * $coin->price);
+if ($zbalance) {
+    echo '<br>('.bitcoinvaluetoa($zbalance).')';
+}
+echo '</td>';
+
 echo "<td>$btc</td>";
 if ($PoS)
     echo '<td>' . $stake . '</td>';
