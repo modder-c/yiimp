@@ -309,6 +309,12 @@ echo CUFHtml::activeCheckBox($coin, 'sellonbid');
 echo '<p class="formHint2">Reduce the sell price on exchanges</p>';
 echo CUFHtml::closeCtrlHolder();
 
+echo CUFHtml::openActiveCtrlHolder($coin, 'sellthreshold');
+echo CUFHtml::activeLabelEx($coin, 'sellthreshold');
+echo CUFHtml::activeTextField($coin, 'sellthreshold', array('maxlength'=>16,'style'=>'width: 120px;'));
+echo '<p class="formHint2">min amount to sell</p>';
+echo CUFHtml::closeCtrlHolder();
+
 echo CUFHtml::openActiveCtrlHolder($coin, 'market');
 echo CUFHtml::activeLabelEx($coin, 'market');
 echo CUFHtml::activeTextField($coin, 'market', array('maxlength'=>128,'style'=>'width: 180px;'));
