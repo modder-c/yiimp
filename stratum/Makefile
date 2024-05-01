@@ -62,17 +62,25 @@ $(OUTPUT): $(OBJECTS)
 	$(CC) $(CFLAGS) -c $<
 
 clean:
+	rm -f stratum
 	rm -f *.o
 	rm -f algos/*.o
 	rm -f algos/*.a
+	rm -f iniparser/*.o
+	rm -f iniparser/src/*.o
+	rm -f iniparser/*.a
 	rm -f sha3/*.o
 	rm -f sha3/*.a
 	rm -f algos/ar2/*.o
 	rm -f algos/blake2/*.o
 	rm -f algos/blake2-ref/*.o
+	rm -f algos/cryptonote/*.o
+	rm -f algos/cryptonote/crypto/*.o
+	rm -f algos/heavyhash/*.o
 	rm -f algos/honeycomb/*.o
 	rm -f algos/SWIFFTX/*.o
 	rm -f algos/yespower/*.o
+	rm -f algos/yespower/crypto/*.o
 	
 install: clean all
 	strip -s stratum

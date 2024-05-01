@@ -8,7 +8,7 @@ RUN set -xe \
     && : "---------- add tools ----------" \
     && apt-get install -y git dumb-init supervisor cron logrotate vim less nano mc memcached haproxy apache2 libapache2-mod-php \
     && : "---------- add build-tools ----------" \
-    && apt-get install -y automake autotools-dev build-essential libtool libasan6 \
+    && apt-get install -y automake autotools-dev build-essential libtool libasan6 gcc-9 g++-9 \
     && : "---------- Persistent dependencies ----------" \
     && apt-get install -y libgd-dev libicu-dev libmariadb-dev-compat libxml2-dev libonig-dev libcurl4-openssl-dev libssl-dev libxslt1-dev libzip-dev libz-dev libmemcached-dev libgmp-dev libsodium-dev \
     && : "---------- php extensions ----------" \
@@ -23,6 +23,13 @@ RUN set -xe \
 
 COPY config/000-default.conf /etc/apache2/sites-available/
 COPY config/ports.conf /etc/apache2/
+
+RUN set -xe \
+    && : "---------- change gcc version to v9 as newer versions build invalid stratum code ----------"
+RUN rm -f /usr/bin/gcc
+RUN ln -s /usr/bin/gcc-9 /usr/bin/gcc
+RUN rm -f /usr/bin/g++
+RUN ln -s /usr/bin/g++-9 /usr/bin/g++
 
 COPY /stratum /tmp/stratum
 WORKDIR /tmp/stratum
