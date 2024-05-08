@@ -18,6 +18,9 @@ struct YAAMP_JOB_VALUES
 	char header_be[8192];
 	unsigned char header_bin[8192];
 
+	char xaya_header[1024];
+	unsigned char xaya_header_bin[1024];
+
 	char solution_hex[4096];
 	char solution_be[4096];
 	unsigned char solution_bin[4096];
@@ -72,6 +75,11 @@ struct YAAMP_JOB_TEMPLATE
 	char merkleroot[4096];
 
 	char header[256];
+
+	char xaya_nbits[32];
+	char xaya_header[1024];
+	char xaya_coinbase[4*1024];
+	char xaya_merkleroothash[512];
 
 	bool has_segwit_txs;
 
