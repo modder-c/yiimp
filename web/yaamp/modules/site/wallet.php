@@ -332,9 +332,9 @@ function graph_init_hashrate(data, algo)
 	$('#graph_results_'+algo).empty();
 
 	var t = $.parseJSON(data);
-	var plot1 = $.jqplot('graph_results_'+algo, t,
+	var plot1 = $.jqplot('graph_results_'+algo, t[0],
 	{
-		title: '<b>'+algo+' Hashrate (Mh/s)</b>',
+		title: '<b>'+t[1]+'</b>',
 		axes: {
 			xaxis: {
 				tickInterval: 7200,

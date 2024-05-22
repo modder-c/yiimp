@@ -7,8 +7,14 @@ if(!$user) return;
 
 $algo = getparam('algo');
 if(empty($algo)) $algo = user()->getState('yaamp-algo');
-
+$factor = yaamp_algo_mBTC_factor($algo);
 $target = yaamp_hashrate_constant($algo);
+
+$algo_unit = 'Mh';
+if ($factor == 0.001) $algo_unit = 'Kh';
+if ($factor == 1000) $algo_unit = 'Gh';
+if ($factor == 1000000) $algo_unit = 'Th';
+if ($factor == 1000000000) $algo_unit = 'Ph';
 
 $step = 15*60;
 $t = time() - 24*60*60;
@@ -16,7 +22,9 @@ $t = time() - 24*60*60;
 $stats = getdbolist('db_hashuser', "time>$t and algo=:algo and userid=$user->id order by time", array(':algo'=>$algo));
 $averages = array();
 
-echo '[[';
+$charttitle = $algo.' Hashrate ('.$algo_unit.'/s)';
+
+echo '[[[';
 
 for($i = $t+$step, $j = 0; $i < time(); $i += $step)
 {
@@ -25,13 +33,13 @@ for($i = $t+$step, $j = 0; $i < time(); $i += $step)
 
 	if($i + $step >= time())
 	{
-		$m = round(yaamp_user_rate($user->id, $algo)/1000000, 3);
+		$m = round((yaamp_user_rate($user->id, $algo)/1000000) / $factor, 3);
 	//	debuglog("last $m");
 	}
 
 	else if(isset($stats[$j]) && $i > $stats[$j]->time)
 	{
-		$m = round($stats[$j]->hashrate/1000000, 3);
+		$m = round(($stats[$j]->hashrate/1000000) / $factor, 3);
 		$j++;
 	}
 
@@ -77,5 +85,5 @@ for($i = $t+$step, $j = 0; $i < time(); $i += $step)
 	echo "[\"$d\",$m]";
 }
 
-echo ']]';
+echo ']],"'.$charttitle.'"]';
 

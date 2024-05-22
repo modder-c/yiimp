@@ -221,7 +221,7 @@ Full pool speed: '.$pool_ttf.' at '.$pool_total_rate.'">'.$real_ttf.'</td>';
         echo '<td align="right" style="font-size: .8em;" title="At current pool speed">' . $pool_ttf . '</td>';
 
     if ($coin->auxpow && $coin->auto_ready)
-        echo "<td align=right style='font-size: .8em; opacity: 0.6;' title='merge mined\n$network_hash_string' data='$pool_hash_pow'>$pool_hash_pow_sfx</td>";
+        echo "<td align=right style='font-size: .8em; opacity: 0.6;' title='merge mined\n$network_hash_string' data='$pool_hash'>$pool_hash_sfx</td>";
     else
         echo "<td align=right style='font-size: .8em;' title='Network: $network_hash_string' data='$pool_hash'>$pool_hash_sfx</td>";
 
