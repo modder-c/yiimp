@@ -206,26 +206,34 @@ void coind_init(YAAMP_COIND *coind)
 	sprintf(params, "[\"legacy\"]", account);
 
 	json_value *json = rpc_call(&coind->rpc, "getrawchangeaddress", params);
-	if(!json)
-	{
-		json = rpc_call(&coind->rpc, "getaddressesbyaccount", params);
-		if (json && json_is_array(json) && json->u.object.length) {
-			debuglog("is array...");
-			if (json->u.object.values[0].value->type == json_string)
-				json = json->u.object.values[0].value;
-		}
-		if (!json) {
-			stratumlog("ERROR getaccountaddress %s\n", coind->name);
-			return;
-		}
-	}
-
-	if (json->u.object.values[0].value->type == json_string) {
+	if (json and json->u.object.values[0].value->type == json_string) {
 		strcpy(coind->wallet, json->u.object.values[0].value->u.string.ptr);
 	}
-	else {
-		strcpy(coind->wallet, "");
-		stratumlog("ERROR getaccountaddress %s\n", coind->name);
+	if (!valid) {
+		json = rpc_call(&coind->rpc, "getaddressesbyaccount", params);
+
+		if (json && json_is_array(json) && json->u.object.length) {
+			debuglog("is array...\n");
+			if (json->u.object.values[0].value->type == json_string)
+				strcpy(coind->wallet, json->u.object.values[0].value->u.string.ptr);
+		}
+	}
+	if (!valid) {
+		json = rpc_call(&coind->rpc, "getaddressesbylabel", params);
+		if (json and !strcmp(json->u.object.values[0].name, "result") and !strcmp(json->u.object.values[1].name, "error"))
+			if (json->u.object.values[1].value->type != json_object) { //{"result":{"SeaVFG3CRtSSP97BE5mhJA33EGtT1MkCj9":{"purpose":"receive"}},"error":null,"id":"3"}
+				strcpy(coind->wallet, json->u.object.values[0].value->u.object.values[0].name);
+			}
+			else { //{"result":null,"error":{"code":-18,"message":"No wallet is loaded. Load a wallet using loadwallet or create a new one with createwallet. (Note: A default wallet is no longer automatically created)"},"id":"3"}
+				if (json->u.object.values[1].value->u.object.values[0].value->type == json_integer and json->u.object.values[1].value->u.object.values[0].value->u.integer == -18) {
+					debuglog("NOTICE -- coind_init -- %s says there's no wallet (code -18), creating\n", coind->symbol);
+					json = rpc_call(&coind->rpc, "createwallet", params);
+					json = rpc_call(&coind->rpc, "getnewaddress", params);
+					if (json and json->u.object.values[0].value->type == json_string) {
+						strcpy(coind->wallet, json->u.object.values[0].value->u.string.ptr);
+					}
+				}
+			}
 	}
 
 	json_value_free(json);
