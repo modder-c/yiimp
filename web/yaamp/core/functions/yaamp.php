@@ -350,15 +350,18 @@ function yaamp_convert_amount_user($coin, $amount, $user)
 {
 	$refcoin = getdbo('db_coins', $user->coinid);
 	$value = 0.;
-	if (YAAMP_ALLOW_EXCHANGE) {
-		if(!$refcoin) $refcoin = getdbosql('db_coins', "symbol='BTC'");
-		if(!$refcoin || $refcoin->price <= 0) return 0;
-		$value = $amount * (($coin->auto_exchange)?$coin->price : 0.) / $refcoin->price;
-	} else if ($coin->price && $refcoin && $refcoin->price > 0.) {
-		$value = $amount * (($coin->auto_exchange)?$coin->price : 0.) / $refcoin->price;
-	} else if ($coin->id == $user->coinid) {
+	if ($coin->id == $user->coinid) {
 		$value = $amount;
+	} else {
+		if (YAAMP_ALLOW_EXCHANGE) {
+			if(!$refcoin) $refcoin = getdbosql('db_coins', "symbol='BTC'");
+			if(!$refcoin || $refcoin->price <= 0) return 0;
+			$value = $amount * (($coin->auto_exchange)?$coin->price : 0.) / $refcoin->price;
+		} else if ($coin->price && $refcoin && $refcoin->price > 0.) {
+			$value = $amount * (($coin->auto_exchange)?$coin->price : 0.) / $refcoin->price;
+		}
 	}
+	
 	return $value;
 }
 
@@ -366,7 +369,9 @@ function yaamp_convert_earnings_user($user, $status)
 {
 	$refcoin = getdbo('db_coins', $user->coinid);
 	$value = 0.;
-	if (YAAMP_ALLOW_EXCHANGE) {
+	if ($refcoin && !$refcoin->auto_exchange) {
+		$value = dboscalar("SELECT sum(amount) FROM earnings WHERE $status AND userid={$user->id} and coinid={$user->coinid}");
+	} else if (YAAMP_ALLOW_EXCHANGE) {
 		if(!$refcoin) $refcoin = getdbosql('db_coins', "symbol='BTC'");
 		if(!$refcoin || $refcoin->price <= 0) return 0;
 		$value = dboscalar("SELECT sum(amount*price) FROM earnings WHERE $status AND userid={$user->id}");

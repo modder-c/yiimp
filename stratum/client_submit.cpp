@@ -332,6 +332,10 @@ static void client_do_submit(YAAMP_CLIENT *client, YAAMP_JOB *job, YAAMP_JOB_VAL
 							target_to_diff_coin(coin_target_aux, coind_aux->powlimit_bits - ((is_equihash)? 0 : 16)),
 							target_to_diff_coin(hash_int, coind_aux->powlimit_bits - ((is_equihash)? 0 : 16)),
 							current_aux->hash, "", 0,client->solo);
+				
+				if(!strcmp(coind_aux->lastnotifyhash, current_aux->hash)) {
+					block_confirm(coind_aux->id, current_aux->hash);
+				}
 			}
 
 			else

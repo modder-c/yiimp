@@ -63,6 +63,8 @@ function BackendBlockNew($coin, $db_block)
 			$user = getdbo('db_accounts', $item['userid']);
 			if(!$user) continue;
 
+			$ucoin = getdbo('db_coins', $user->coinid);
+
 			$amount = $reward * $hash_power / $total_hash_power;
 		
 			if(!$user->no_fees) $amount = take_yaamp_fee($amount, $coin->algo);
@@ -71,26 +73,32 @@ function BackendBlockNew($coin, $db_block)
 				$amount = take_yaamp_fee($amount, $coin->algo, $user->donation);
 				if ($amount <= 0) continue;
 			}
-			$earning = new db_earnings;
-			$earning->userid = $user->id;
-			$earning->amount = $amount;
-			$earning->coinid = $coin->id;
-			$earning->blockid = $db_block->id;
-			$earning->create_time = $db_block->time;
-			$earning->price = ($coin->auto_exchange) ? $coin->price : 0;
 
-			if($db_block->category == 'generate')
-			{
-				$earning->mature_time = time();
-				$earning->status = 1;
-			}
-			else	// immature
-				$earning->status = 0;
-		
-			$ucoin = getdbo('db_coins', $user->coinid);
-			if(!YAAMP_ALLOW_EXCHANGE && $ucoin && $ucoin->algo != $coin->algo) {
-				debuglog($coin->symbol.": invalid earning for {$user->username}, user coin is {$ucoin->symbol}");
-				$earning->status = -1;
+			if (!YAAMP_ALLOW_EXCHANGE || $ucoin->id == $coin->id ||
+				($ucoin->auto_exchange && $coin->auto_exchange)) {
+
+				$earning = new db_earnings;
+				$earning->userid = $user->id;
+				$earning->amount = $amount;
+				$earning->coinid = $coin->id;
+				$earning->blockid = $db_block->id;
+				$earning->create_time = $db_block->time;
+				$earning->price = ($coin->auto_exchange) ? $coin->price : 0;
+
+				if($db_block->category == 'generate')
+				{
+					$earning->mature_time = time();
+					$earning->status = 1;
+				}
+				else	// immature
+					$earning->status = 0;
+			
+				if ($ucoin) {
+					if(!YAAMP_ALLOW_EXCHANGE && $ucoin->algo != $coin->algo) {
+						debuglog($coin->symbol.": invalid earning for {$user->username}, user coin is {$ucoin->symbol}");
+						$earning->status = -1;
+					}
+				}
 			}
 		
 			if (!$earning->save())
@@ -464,7 +472,7 @@ function BackendBlockFind2($coinid = NULL)
 			}
 
 			// masternode earnings...
-			if (empty($db_block->userid) && $transaction['amount'] == 0 && $transaction['generated']) {
+			if (empty($db_block->userid) && ((!isset($transaction['amount'])) || ($transaction['amount'] == 0)) && $transaction['generated']) {
 				$db_block->algo = 'MN';
 				$tx = $remote->getrawtransaction($transaction['txid'], 1);
 
