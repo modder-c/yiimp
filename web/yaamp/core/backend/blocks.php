@@ -99,10 +99,10 @@ function BackendBlockNew($coin, $db_block)
 						$earning->status = -1;
 					}
 				}
-			}
 		
-			if (!$earning->save())
-				debuglog(__FUNCTION__.": Unable to insert earning!");
+				if (!$earning->save())
+					debuglog(__FUNCTION__.": Unable to insert earning!");
+			}
 
 			$user->last_earning = time();
 			$user->save();
@@ -126,34 +126,41 @@ function BackendBlockNew($coin, $db_block)
 		$amount = $reward;
 		$user = getdbo('db_accounts', $db_block->userid);
 		if(!$user) return;
-		
-		if(!$user->no_fees) $amount = take_yaamp_fee($amount, $coin->algo, YAAMP_FEES_SOLO);
-	
-		$earning = new db_earnings;
-		$earning->userid = $user->id;
-		$earning->amount = $amount;
-		$earning->coinid = $coin->id;
-		$earning->blockid = $db_block->id;
-		$earning->create_time = $db_block->time;
-		$earning->price = ($coin->auto_exchange) ? $coin->price : 0 ;
 
-		if($db_block->category == 'generate')
-		{
-			$earning->mature_time = time();
-			$earning->status = 1;
-		}
-		else	// immature
-			$earning->status = 0;
-	
 		$ucoin = getdbo('db_coins', $user->coinid);
-		if(!YAAMP_ALLOW_EXCHANGE && $ucoin && $ucoin->algo != $coin->algo) {
-			debuglog($coin->symbol.": invalid earning for {$user->username}, user coin is {$ucoin->symbol}");
-			$earning->status = -1;
-		}
+
+		if(!$user->no_fees) $amount = take_yaamp_fee($amount, $coin->algo, YAAMP_FEES_SOLO);
+
+		if (!YAAMP_ALLOW_EXCHANGE || $ucoin->id == $coin->id ||
+			($ucoin->auto_exchange && $coin->auto_exchange)) {
+
+			$earning = new db_earnings;
+			$earning->userid = $user->id;
+			$earning->amount = $amount;
+			$earning->coinid = $coin->id;
+			$earning->blockid = $db_block->id;
+			$earning->create_time = $db_block->time;
+			$earning->price = ($coin->auto_exchange) ? $coin->price : 0 ;
+
+			if($db_block->category == 'generate')
+			{
+				$earning->mature_time = time();
+				$earning->status = 1;
+			}
+			else	// immature
+				$earning->status = 0;
 		
-		if (!$earning->save())
-			debuglog(__FUNCTION__.": Unable to insert earning!");
-	
+			if ($ucoin) {
+				if(!YAAMP_ALLOW_EXCHANGE && $ucoin->algo != $coin->algo) {
+					debuglog($coin->symbol.": invalid earning for {$user->username}, user coin is {$ucoin->symbol}");
+					$earning->status = -1;
+				}
+			}
+			
+			if (!$earning->save())
+				debuglog(__FUNCTION__.": Unable to insert earning!");
+		}
+
 		$user->last_earning = time();
 		$user->save();
 		
