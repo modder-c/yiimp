@@ -154,6 +154,7 @@ YAAMP_ALGO g_algos[] =
 	{"equihash144", equi_hash, 0x100, 0, 0},
 	{"equihash192", equi_hash, 0x100, 0, 0},
 	{"equihash96", equi_hash, 0x100, 0, 0},
+	{"flex", flex_hash, 1, 0, sha3d_hash_hex},
 	{"fresh", fresh_hash, 0x100, 0, 0},
 	{"geek", geek_hash, 1, 0, 0},
 	{"gr", gr_hash, 0x10000, 0, 0},
