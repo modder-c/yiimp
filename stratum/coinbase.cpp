@@ -729,11 +729,11 @@ void coinbase_create(YAAMP_COIND *coind, YAAMP_JOB_TEMPLATE *templ, json_value *
 			continue;
 		}
 
-		if (json_result->u.object.values[i].value->type == json_string and json_result->u.object.values[i].name == payeeName.c_str()) {
+		if (json_result->u.object.values[i].value->type == json_string and strstr(json_result->u.object.values[i].name , payeeName.c_str())) {
 			paysOldMN.payee = json_result->u.object.values[i].value->u.string.ptr;
 			continue;
 		}
-		if (json_result->u.object.values[i].value->type == json_integer and json_result->u.object.values[i].name == amountNameOld.c_str()) {
+		if (json_result->u.object.values[i].value->type == json_integer and strstr(json_result->u.object.values[i].name , amountNameOld.c_str())) {
 			paysOldMN.amount = json_result->u.object.values[i].value->u.integer;
 		}
 	}
