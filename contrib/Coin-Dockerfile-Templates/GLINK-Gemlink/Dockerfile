@@ -17,7 +17,7 @@ FROM baseimage2204 as coinwallet
 
 # Clone the source code.
 ARG STRATUM_UPDATEPASS
-ARG CURRENT_GITHUB_COMMIT=e585a558fafb83c054cc79ae53c66c1da0a0a55c
+ARG CURRENT_GITHUB_COMMIT=c876ec4c2519dcca182ee201cc95e24324de0ae9
 
 RUN git clone https://github.com/gemlink/gemlink
 WORKDIR /gemlink

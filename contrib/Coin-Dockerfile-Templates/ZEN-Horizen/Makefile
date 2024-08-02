@@ -1,7 +1,7 @@
 # change image name
 image_name=horizen
 # version tag
-version=v5.0.2
+version=v5.0.3
 # local storage for container dumps
 container_savepath=${CONTAINER_SAVEPATH}
 

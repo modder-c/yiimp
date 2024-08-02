@@ -22,7 +22,7 @@ FROM baseimage1804 as coinwallet
 
 # Clone the source code.
 ARG STRATUM_UPDATEPASS
-ARG CURRENT_GITHUB_COMMIT=ce1312baec716bfe0fb117f45b4ac4d2a5ae06f3
+ARG CURRENT_GITHUB_COMMIT=5e10e064e50b13e70c8d21cf6729223933ff73dc
 
 RUN git clone https://github.com/ObsidianCoreCoin/obsidiancoin
 WORKDIR /obsidiancoin

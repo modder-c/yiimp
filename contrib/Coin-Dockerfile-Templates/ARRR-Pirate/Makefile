@@ -1,7 +1,7 @@
 # change image name
 image_name=pirate
 # version tag
-version=5.8.1
+version=v5.8.2
 # local storage for container dumps
 container_savepath=${CONTAINER_SAVEPATH}
 

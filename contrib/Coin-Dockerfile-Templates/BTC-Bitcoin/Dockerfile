@@ -17,7 +17,7 @@ FROM baseimage2204 as coinwallet
 
 # Clone the source code.
 ARG STRATUM_UPDATEPASS
-ARG CURRENT_GITHUB_COMMIT=d82283950f5ff3b2116e705f931c6e89e5fdd0be
+ARG CURRENT_GITHUB_COMMIT=1088a98f5aad080cc6cca2da174f206509fcda6c
 
 RUN git clone https://github.com/bitcoin/bitcoin
 WORKDIR /bitcoin

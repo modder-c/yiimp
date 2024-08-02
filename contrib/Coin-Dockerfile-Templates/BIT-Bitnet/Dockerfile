@@ -17,7 +17,7 @@ FROM baseimage2204 as coinwallet
 
 # Clone the source code.
 ARG STRATUM_UPDATEPASS
-ARG CURRENT_GITHUB_COMMIT=b2ad0b4adced68c578b06c56392f7fd663909c91
+ARG CURRENT_GITHUB_COMMIT=b938d5a9ced3598b72642f6a463ea7bd88dc1749
 
 RUN git clone https://github.com/bitnet-io/bitnet-core
 WORKDIR /bitnet-core

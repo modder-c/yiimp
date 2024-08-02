@@ -1,7 +1,7 @@
 # change image name
 image_name=bitnet
 # version tag
-version=v70032-20240301
+version=v70034
 # local storage for container dumps
 container_savepath=${CONTAINER_SAVEPATH}
 

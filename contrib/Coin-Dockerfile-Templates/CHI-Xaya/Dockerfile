@@ -17,7 +17,7 @@ FROM baseimage2204 as coinwallet
 
 # Clone the source code.
 ARG STRATUM_UPDATEPASS
-ARG CURRENT_GITHUB_COMMIT=b9ffe17ffeb791b0ca6a2cb563b114f3c52291d6
+ARG CURRENT_GITHUB_COMMIT=4301c93acf9cc7a170cd18c89185e78775ee6a66
 
 RUN git clone https://github.com/xaya/xaya
 WORKDIR /xaya

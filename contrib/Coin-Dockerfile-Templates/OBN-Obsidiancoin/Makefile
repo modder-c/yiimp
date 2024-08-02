@@ -1,7 +1,7 @@
 # change image name
 image_name=obsidiancoin
 # version tag
-version=v1.3.0.0
+version=v1.3.1.0
 # local storage for container dumps
 container_savepath=${CONTAINER_SAVEPATH}
 
