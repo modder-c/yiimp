@@ -1,7 +1,7 @@
 # change image name
 image_name=blocx
 # version tag
-version=v3.3.0
+version=v4.0.2
 # local storage for container dumps
 container_savepath=${CONTAINER_SAVEPATH}
 

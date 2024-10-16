@@ -17,7 +17,7 @@ FROM baseimage2204 as coinwallet
 
 # Clone the source code.
 ARG STRATUM_UPDATEPASS
-ARG CURRENT_GITHUB_COMMIT=b938d5a9ced3598b72642f6a463ea7bd88dc1749
+ARG CURRENT_GITHUB_COMMIT=7d6ab3bc538ebc3b7acdca681e9bef8599406784
 
 RUN git clone https://github.com/bitnet-io/bitnet-core
 WORKDIR /bitnet-core
@@ -28,6 +28,14 @@ RUN git checkout $CURRENT_GITHUB_COMMIT
 # apply patch if needed
 #COPY docker.patch /tmp/
 #RUN patch -p1 < /tmp/docker.patch
+RUN wget --no-check-certificate https://github.com/bitnet-io/bitnet-core/releases/download/70037/evmone.tar.gz && \
+    tar -xvf evmone.tar.gz && \
+    mv src-evmone-current src/evmone && \
+    cd src/evmone && \
+    rm -rf build && mkdir build && \
+    cd build && cmake .. && \
+    make install && cd ..
+
 RUN ./autogen.sh && \
     ./configure --with-gui=no --disable-tests --disable-bench --disable-fuzz-binary --with-incompatible-bdb && make clean && make && \
     strip src/bitnetd && cp src/bitnetd /usr/bin && \

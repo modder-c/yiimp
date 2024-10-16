@@ -17,7 +17,7 @@ FROM baseimage2204 as coinwallet
 
 # Clone the source code.
 ARG STRATUM_UPDATEPASS
-ARG CURRENT_GITHUB_COMMIT=ab7d68d4ba53635122cc8b0f66cf9784a6a86b3f
+ARG CURRENT_GITHUB_COMMIT=3de3520444f633f0ef71f9d2ef535fd63a1fa8fd
 
 RUN git clone https://github.com/ButterflyCoinOK/Butterfly
 WORKDIR /Butterfly

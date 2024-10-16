@@ -1,7 +1,7 @@
 # change image name
 image_name=bitcoinz
 # version tag
-version=2.0.8-EXT
+version=2.0.10
 # local storage for container dumps
 container_savepath=${CONTAINER_SAVEPATH}
 

@@ -17,7 +17,7 @@ FROM baseimage2204 as coinwallet
 
 # Clone the source code.
 ARG STRATUM_UPDATEPASS
-ARG CURRENT_GITHUB_COMMIT=bb9746c4cfaebeba601168c9f06651679f2c3cf1
+ARG CURRENT_GITHUB_COMMIT=b5f75c9cb4b79a476d5a83e56750876f7a46edc0
 
 RUN git clone https://github.com/PirateNetwork/pirate
 WORKDIR /pirate

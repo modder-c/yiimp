@@ -1,7 +1,7 @@
 # change image name
 image_name=zcash
 # version tag
-version=v5.9.1
+version=v6.0.0
 # local storage for container dumps
 container_savepath=${CONTAINER_SAVEPATH}
 

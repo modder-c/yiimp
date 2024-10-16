@@ -1,7 +1,7 @@
 # change image name
 image_name=dogmcoin
 # version tag
-version=v1.14.5.3
+version=v1.14.6.1
 # local storage for container dumps
 container_savepath=${CONTAINER_SAVEPATH}
 

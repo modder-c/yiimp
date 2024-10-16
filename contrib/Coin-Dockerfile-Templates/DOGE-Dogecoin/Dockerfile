@@ -17,7 +17,7 @@ FROM baseimage2204 as coinwallet
 
 # Clone the source code.
 ARG STRATUM_UPDATEPASS
-ARG CURRENT_GITHUB_COMMIT=a6d12201363b0eb4ccf854b609fc6e98958b1443
+ARG CURRENT_GITHUB_COMMIT=6c063e714f35cfabae6400fb5cdcb15473b384db
 
 # build db5.3.28 or use --with-incompatible-bdb in configure
 WORKDIR /tmp

@@ -1,7 +1,7 @@
 # change image name
 image_name=komodo
 # version tag
-version=v0.8.1
+version=v0.9.0
 # local storage for container dumps
 container_savepath=${CONTAINER_SAVEPATH}
 

@@ -17,7 +17,7 @@ FROM baseimage2204 as coinwallet
 
 # Clone the source code.
 ARG STRATUM_UPDATEPASS
-ARG CURRENT_GITHUB_COMMIT=09b4d1b1fea13815f7a6b890040657a86d68b89b
+ARG CURRENT_GITHUB_COMMIT=65953bb7859988698fdf8fdbc62885b39f977be0
 
 RUN git clone https://github.com/HorizenOfficial/zen
 WORKDIR /zen
