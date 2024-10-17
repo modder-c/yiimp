@@ -6,9 +6,9 @@ RUN set -xe \
     && : "---------- Fix possible vulnerabilities ----------" \
     && apt-get update && apt-get dist-upgrade -y \
     && : "---------- add tools ----------" \
-    && apt-get install -y git dumb-init supervisor cron logrotate vim less nano mc memcached haproxy apache2 libapache2-mod-php \
+    && apt-get install -y git bc dumb-init supervisor cron logrotate vim less nano mc memcached haproxy apache2 libapache2-mod-php \
     && : "---------- add build-tools ----------" \
-    && apt-get install -y automake autotools-dev build-essential libtool libasan6 gcc-9 g++-9 \
+    && apt-get install -y automake autotools-dev build-essential libtool libasan6 gcc-9 g++-9 python3 python3-venv libaugeas0 \
     && : "---------- Persistent dependencies ----------" \
     && apt-get install -y libgd-dev libicu-dev libmariadb-dev-compat libxml2-dev libonig-dev libcurl4-openssl-dev libssl-dev libxslt1-dev libzip-dev libz-dev libmemcached-dev libgmp-dev libsodium-dev \
     && : "---------- php extensions ----------" \
@@ -31,6 +31,15 @@ RUN ln -s /usr/bin/gcc-9 /usr/bin/gcc
 RUN rm -f /usr/bin/g++
 RUN ln -s /usr/bin/g++-9 /usr/bin/g++
 
+# add Let’s Encrypt repository in /opt
+RUN python3 -m venv /opt/certbot/ && \
+    /opt/certbot/bin/pip install --upgrade pip && \
+    /opt/certbot/bin/pip install certbot && \
+    ln -s /opt/certbot/bin/certbot /usr/bin/certbot
+
+COPY --chmod=755 /bin/letsencrypt-* /usr/local/bin/
+
+# build stratum binary
 COPY /stratum /tmp/stratum
 WORKDIR /tmp/stratum
 RUN make buildonly && cp stratum /usr/bin/
@@ -63,8 +72,7 @@ CMD ["apache2-foreground"]
 # Build production image
 FROM baseimage as image-prod
 
-COPY /web/ /var/www/
-RUN chown www-data:www-data -R /var/www/
+COPY --chown=www-data:www-data /web/ /var/www/
 
 WORKDIR /var/www/
 

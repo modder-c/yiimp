@@ -50,6 +50,8 @@ change supervisord.conf to
 * add stratum instances
 * control backend-processes
 
+additional SSL-support added by using HAProxy and Letsencrypt certificates - for HTTP/S and stratum connections
+
 <h2 align="left"> original description - maybe outdated</h2>
 <h3 align="left"> Requirements </h3>
 

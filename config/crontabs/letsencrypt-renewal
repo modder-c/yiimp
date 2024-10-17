@@ -1,0 +1,2 @@
+#### renew / create letsencrypt certificate
+#2 1,13 * * * root export MAILADDRESS='user@example.com'; export DOMAINNAME='yiimp.example.com' ;/usr/local/bin/letsencrypt-yiimp.sh

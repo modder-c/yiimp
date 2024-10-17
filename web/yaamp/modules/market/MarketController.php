@@ -62,7 +62,11 @@ class MarketController extends CommonController
 		$remote = new WalletRPC($coin);
 
 		$info = $remote->getinfo();
-		if(!$info || !$info['balance']) return false;
+		if(!$info || !$info['balance'])
+		{
+			user()->setFlash('error', "not enough balance $coin->name");
+			$this->redirect(array('site/coin', 'id'=>$coin->id));
+		}
 
 		$deposit_info = $remote->validateaddress($market->deposit_address);
 		if(!$deposit_info || !isset($deposit_info['isvalid']) || !$deposit_info['isvalid'])
