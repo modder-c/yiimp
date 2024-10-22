@@ -1,4 +1,4 @@
-<h1 align="center"> Yiimp - Yaamp Fork </h1>
+<h1 align="center"> Yiimp - Yaamp Fork-update </h1>
 
 <h3 align="left"> Requirements </h3>
 
