@@ -47,6 +47,7 @@ define('YAAMP_USE_NGINX', false);
 // Exchange public keys (private keys are in a separate config file)
 define('EXCH_ALCUREX_KEY', '');
 define('EXCH_COINEX_KEY', 'your_coinex_api_key');
+define('EXCH_COINEX_SECRET', 'your_coinex_api_secret_here');
 define('EXCH_ALTMARKETS_KEY', '');
 define('EXCH_BINANCE_KEY', '');
 define('EXCH_BITTREX_KEY', '');
