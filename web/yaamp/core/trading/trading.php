@@ -6,7 +6,6 @@ require_once('kraken_trading.php');
 require_once('yobit_trading.php');
 require_once('hitbtc_trading.php');
 require_once('kucoin_trading.php');
-require_once('graviex_trading.php');
 require_once('xeggex_trading.php');
 
 function cancelExchangeOrder($order=false)
@@ -25,9 +24,6 @@ function cancelExchangeOrder($order=false)
 				break;
 			case 'kucoin':
 				doKuCoinCancelOrder($order->uuid);
-				break;
-			case 'graviex':
-				doGraviexCancelOrder($order->uuid);
 				break;
 			case 'xeggex':
 				doXeggexCancelOrder($order->uuid);
@@ -82,11 +78,6 @@ function runExchange($exchangeName=false)
 			case 'poloniex':
 				doPoloniexTrading(true);
 				updatePoloniexMarkets();
-				break;
-
-			case 'graviex':
-				doGraviexTrading(true);
-				updateGraviexMarkets();
 				break;
 
 			case 'xeggex':

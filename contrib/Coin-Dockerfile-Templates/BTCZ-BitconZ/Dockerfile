@@ -1,4 +1,4 @@
-FROM ubuntu:18.04 as baseimage1804
+FROM ubuntu:22.04 as baseimage2204
 LABEL maintainer tpfuemp@github
 
 ENV DEBIAN_FRONTEND noninteractive
@@ -8,21 +8,16 @@ RUN apt-get update && \
     automake autotools-dev build-essential dh-autoreconf \
     ca-certificates git \
     libboost-chrono-dev libboost-filesystem-dev libboost-program-options-dev libboost-system-dev libboost-test-dev libboost-thread-dev libevent-dev \
-    libssl1.0-dev libgmp-dev libsodium-dev libz-dev bsdmainutils curl libsqlite3-dev \
+    libssl-dev libcurl4-openssl-dev libgmp-dev libsodium-dev libz-dev libdb-dev libdb++-dev bsdmainutils curl libsqlite3-dev \
     libtool pkg-config && \
-# 3. install db v4.8
-    apt-get install -y --no-install-recommends software-properties-common && \
-    add-apt-repository ppa:bitcoin/bitcoin && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends libdb4.8-dev libdb4.8++-dev && \
     apt-get install -y --no-install-recommends mc psmisc wget protobuf-compiler libminiupnpc-dev g++ curl cmake bison libevent-dev libboost-dev libxml2-dev python3 flex dumb-init && \
     apt-get clean
 
-FROM baseimage1804 as coinwallet
+FROM baseimage2204 as coinwallet
 
 # Clone the source code.
 ARG STRATUM_UPDATEPASS
-ARG CURRENT_GITHUB_COMMIT=fb4f23be97bc75e9b25425abe8872b0ec5ada574
+ARG CURRENT_GITHUB_COMMIT=c327f836279309a9301a54073e70eeebbe7edd93
 
 RUN git clone https://github.com/btcz/bitcoinz
 WORKDIR /bitcoinz

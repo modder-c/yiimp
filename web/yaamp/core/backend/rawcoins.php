@@ -177,6 +177,22 @@ function updateRawCoinExchange($marketname)
 		}
 		break;
 	
+		case 'safetrade':
+			if (!exchange_get('safetrade', 'disabled')) {
+				$list = safetrade_api_query('trade/public/markets','','array');
+
+				if(is_array($list) && !empty($list)) {
+					dborun("UPDATE markets SET deleted=true WHERE name='safetrade'");
+					foreach ($list as $tickers) {
+						$base = strtoupper($tickers['quote_unit']);
+						if (strtoupper($base) !== 'BTC'||strtoupper($base) !== 'USDT')
+						$symbol = strtoupper($tickers['base_unit']);
+						updateRawCoin('safetrade', $symbol, $symbol);
+					}
+				}
+			}
+			break;
+
 		case 'tradeogre':
 			if (!exchange_get('tradeogre', 'disabled')) {
 				$list = tradeogre_api_query('markets');
@@ -362,21 +378,6 @@ function updateRawCoinExchange($marketname)
 					foreach($list["result"] as $currency) {
 						if ($currency["currency_symbol"] == 'BTC') continue;
 						updateRawCoin('bibox', $currency["coin_symbol"]);
-					}
-				}
-			}
-		break;
-		case 'graviex':
-			if (!exchange_get('graviex', 'disabled')) {
-				$list = graviex_api_query('markets');
-				if(is_array($list) && !empty($list))
-				{
-					dborun("UPDATE markets SET deleted=true WHERE name='graviex'");
-					foreach ($list as $currency) {
-						$e = explode('/', $currency->name);
-						$symbol = strtoupper($e[0]); $base = strtoupper($e[1]);
-						$name = $symbol;
-						updateRawCoin('graviex', $symbol, $name);
 					}
 				}
 			}

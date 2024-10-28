@@ -145,7 +145,6 @@ class CronjobController extends CommonController
 			case 2:
 				if(!YAAMP_PRODUCTION) break;
 
-				doGraviexTrading();
 				doBinanceTrading();
 				doKuCoinTrading();
 				doYobitTrading();
@@ -224,7 +223,8 @@ class CronjobController extends CommonController
 	public function actionTestfunction()
 	{
 	    set_time_limit(0);
-	    updateGraviexMarkets();
+
+	    updateSafetradeMarkets();
 	}
 
 }

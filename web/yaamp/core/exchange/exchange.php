@@ -19,7 +19,6 @@ require_once("cexio.php");
 require_once("exbitron.php");
 require_once("escodex.php");
 require_once("gateio.php");
-require_once("graviex.php");
 require_once("kraken.php");
 require_once("poloniex.php");
 require_once("yobit.php");
@@ -31,8 +30,8 @@ require_once("kucoin.php");
 require_once("xeggex.php");
 require_once("nonkyc.php");
 require_once("tradeogre.php");
+require_once("safetrade.php");
 require_once("swiftex.php");
-require_once("unnamed.php");
 require_once("bibox.php");
 
 
@@ -75,8 +74,6 @@ function getMarketUrl($coin, $marketName)
 		$url = "https://wallet.escodex.com/market/ESCODEX.{$symbol}_ESCODEX.{$base}";
 	else if($market == 'gateio')
 		$url = "https://gate.io/trade/{$symbol}_{$base}";
-	else if($market == 'graviex')
-		$url = "https://graviex.net/markets/{$lowsymbol}{$lowbase}";
 	else if($market == 'jubi')
 		$url = "http://jubi.com/coin/{$lowsymbol}";
 	else if($market == 'hitbtc')
@@ -93,8 +90,8 @@ function getMarketUrl($coin, $marketName)
 		$url = "https://yobit.net/en/trade/{$symbol}/{$base}";
 	else if($market == 'swiftex')
 		$url = "https://swiftex.co/trading/{$lowsymbol}-{$lowbase}";	
-	else if($market == 'unnamed')
-		$url = "https://www.unnamed.exchange/Exchange/Basic?market={$symbol}_{$base}";	
+	else if($market == 'safetrade')
+		$url = "https://safetrade.com/exchange/{$lowsymbol}-{$lowbase}";	
 	else
 		$url = "";
 

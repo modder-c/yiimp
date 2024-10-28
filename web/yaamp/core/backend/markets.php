@@ -14,8 +14,6 @@ function BackendPricesUpdate()
 		BackendPricesUpdateExchange($exchange->name);
 	}
 
-	updateOtherMarkets();
-
 	$list2 = getdbolist('db_coins', "installed AND IFNULL(symbol2,'') != ''");
 	foreach($list2 as $coin2)
 	{
@@ -91,9 +89,6 @@ function BackendPricesUpdateExchange($exchangename)
 		break;
 		case 'p2pb2b':
 			updateP2PB2BMarkets();
-		break;
-		case 'graviex':
-			updateGraviexMarkets();
 		break;
 		case 'btc-alpha':
 			updateBTCAlphaMarkets();
@@ -249,21 +244,28 @@ function AverageIncrement($value1, $value2)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 function updateSafeTradeMarkets() {
 	debuglog(__FUNCTION__);
-	
+
 	$exchange = 'safetrade';
 	debuglog ("====== $exchange =======");
 	if (exchange_get($exchange, 'disabled')) return;
-	$list = safetrade_api_query('markets');
-	if(empty($list) || !is_array($list)) return;
-	// debuglog(json_encode($list));
-	$tickers = safetrade_api_query('markets/tickers');
-	foreach($list as $data) {
-		$e = explode('/', $data->name);
-		$symbol = strtoupper($e[0]); $base = strtoupper($e[1]);
-		if($base != 'BTC') continue;
-		// debuglog("$symbol : $base");
-		$id = $data->id;
 
+	// marketnames to base/coin - symbols
+	$marketlist = safetrade_api_query('trade/public/markets', '', 'array');
+	if(empty($marketlist) || !is_array($marketlist)) return;
+	$marketnames = array();
+	foreach($marketlist as $data) {
+		$marketnames[$data['id']] = [ 'coinsymbol' => $data['base_unit'], 'basesymbol' => $data['quote_unit']];
+	}
+
+	$tickers = safetrade_api_query('trade/public/tickers');
+	foreach($tickers as $ticker_key => $ticker_data) {
+		if (!isset($marketnames[$ticker_key])) continue;
+		
+		$symbol = strtoupper($marketnames[$ticker_key]['coinsymbol']);
+		$base = strtoupper($marketnames[$ticker_key]['basesymbol']);
+		if($base != 'BTC') continue;
+
+		// debuglog("$symbol : $base");
 		$coin = getdbosql('db_coins', "symbol=:sym", array(':sym'=>$symbol));
 		if(!$coin) continue;
 		$market = getdbosql('db_markets', "coinid={$coin->id} AND name='$exchange' AND IFNULL(base_coin,'') IN ('','BTC')");
@@ -289,20 +291,17 @@ function updateSafeTradeMarkets() {
 				continue;
 			}
 		}
-		$ticker = $tickers->$id;
-		// if ($symbol == 'URX') debuglog(json_encode($ticker));
-		$data = $ticker->ticker;
-		$bid = bitcoinvaluetoa($data->low);
-		$ask = bitcoinvaluetoa($data->high);
-		// if ($symbol == 'URX') debuglog($symbol. ' : ' .$bid. ' : ' .$ask);
+		$bid = bitcoinvaluetoa($ticker_data->low);
+		$ask = bitcoinvaluetoa($ticker_data->high);
+
 		// $market->disabled = ($bid == 0);
 		$price2 = ((double)$ask + (double)$bid)/2;
-		// if ($symbol == 'URX') debuglog($symbol. ' : ' .$price2);
+
 		$market->price2 = AverageIncrement($market->price2, $price2);
 		$market->price = AverageIncrement($market->price, (double)$bid);
 		$market->priority = -1; // not ready for trading
 		$market->txfee = 0.2;
-		debuglog("$exchange: $symbol price set to ".bitcoinvaluetoa($market->price));
+		//debuglog("$exchange: $symbol price set to ".bitcoinvaluetoa($market->price));
 		$market->pricetime = time(); // $m->updated_time;
 		$market->save();
 		if (!empty($market->price2))
@@ -365,12 +364,12 @@ function updateAltMarketsMarkets() {
 		$ask = bitcoinvaluetoa($data->high);
 		$market->disabled = ($bid == 0);
 		$price2 = ((double)$ask + (double)$bid)/2;
-		//debuglog($symbol. ' : ' .$price2);
+
 		$market->price2 = AverageIncrement($market->price2, $price2);
 		$market->price = AverageIncrement($market->price, (double)$bid);
 		$market->priority = -1; // not ready for trading
 		$market->txfee = 0.2;
-		debuglog("$exchange: $symbol price set to ".bitcoinvaluetoa($market->price));
+		// debuglog("$exchange: $symbol price set to ".bitcoinvaluetoa($market->price));
 		$market->pricetime = time(); // $m->updated_time;
 		$market->save();
 		if (!empty($market->price2))
@@ -433,12 +432,12 @@ function updateExbitronMarkets() {
 		$ask = bitcoinvaluetoa($data->high);
 		$market->disabled = ($bid == 0);
 		$price2 = ((double)$ask + (double)$bid)/2;
-		//debuglog($symbol. ' : ' .$price2);
+
 		$market->price2 = AverageIncrement($market->price2, $price2);
 		$market->price = AverageIncrement($market->price, (double)$bid);
 		$market->priority = -1; // not ready for trading
 		$market->txfee = 0.2;
-		debuglog("$exchange: $symbol price set to ".bitcoinvaluetoa($market->price));
+		// debuglog("$exchange: $symbol price set to ".bitcoinvaluetoa($market->price));
 		$market->pricetime = time(); // $m->updated_time;
 		$market->save();
 		if (!empty($market->price2))
@@ -495,12 +494,12 @@ function updateP2PB2BMarkets()
 		debuglog(json_encode($data));
 		$market->disabled = ($data->bid == 0);
 		$price2 = ((double)$data->ask + (double)$data->bid)/2;
-		//debuglog($symbol. ' : ' .$price2);
+
 		$market->price2 = AverageIncrement($market->price2, $price2);
 		$market->price = AverageIncrement($market->price, (double)$data->bid);
 		$market->priority = -1; // not ready for trading
 		$market->txfee = 0.2;
-		debuglog("$exchange: $symbol price set to ".bitcoinvaluetoa($market->price));
+		// debuglog("$exchange: $symbol price set to ".bitcoinvaluetoa($market->price));
 		$market->pricetime = time(); // $m->updated_time;
 		$market->save();
 		if (!empty($market->price2))
@@ -837,57 +836,6 @@ function updateGateioMarkets($force = false)
 			$market->pricetime = time();
 			$market->priority = -1;
 			$market->txfee = 0.2; // trade pct
-			$market->save();
-
-			if (empty($coin->price2)) {
-				$coin->price = $market->price;
-				$coin->price2 = $market->price2;
-				$coin->market = $exchange;
-				$coin->save();
-			}
-		}
-	}
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////
-
-function updateGraviexMarkets($force = false)
-{
-	$exchange = 'graviex';
-	if (exchange_get($exchange, 'disabled')) return;
-
-	$list = getdbolist('db_markets', "name LIKE '$exchange%'");
-	if (empty($list)) return;
-
-	$markets = graviex_api_query('tickers','','array');
-	if(!is_array($markets)) return;
-
-	foreach($list as $market)
-	{
-		$coin = getdbo('db_coins', $market->coinid);
-		if(!$coin) continue;
-
-		$symbol = $coin->getOfficialSymbol();
-		if (market_get($exchange, $symbol, "disabled")) {
-			$market->disabled = 1;
-			$market->message = 'disabled from settings';
-			$market->save();
-			continue;
-		}
-
-		$symbol = strtolower($symbol);
-
-		$dbpair = $symbol.'btc';
-		if (!empty($market->base_coin)) {
-			$dbpair = strtolower($symbol.$market->base_coin);
-		}
-
-		foreach ($markets as $pair => $ticker) {
-			if ($pair != $dbpair) continue;
-			$price2 = ($ticker['ticker']['buy']+$ticker['ticker']['sell'])/2;
-			$market->price = AverageIncrement($market->price, $ticker['ticker']['buy']);
-			$market->price2 = AverageIncrement($market->price2, $price2);
-			$market->pricetime = time();
 			$market->save();
 
 			if (empty($coin->price2)) {
@@ -1482,34 +1430,6 @@ function updateShapeShiftMarkets()
 				$coin->price2 = $market->price2;
 				//$coin->market = 'shapeshift';
 				$coin->save();
-			}
-		}
-	}
-}
-
-// update other installed coins price from cryptonator
-function updateOtherMarkets()
-{
-	$coins = getdbolist('db_coins', "installed AND IFNULL(price,0.0) = 0.0");
-	foreach($coins as $coin)
-	{
-		$symbol = $coin->getOfficialSymbol();
-		if (market_get("cryptonator", $coin->symbol, "disabled")) {
-			continue;
-		}
-
-		$json = @ file_get_contents("https://www.cryptonator.com/api/full/".strtolower($symbol)."-btc");
-		$object = json_decode($json);
-		if (empty($object)) continue;
-
-		if (is_object($object) && isset($object->ticker)) {
-			$ticker = $object->ticker;
-			if ($ticker->target == 'BTC' && $ticker->volume > 1) {
-				$coin->price2 = $ticker->price;
-				$coin->price  = AverageIncrement((float)$coin->price, (float)$coin->price2);
-				if ($coin->save()) {
-					debuglog("cryptonator: $symbol price set to ".bitcoinvaluetoa($coin->price));
-				}
 			}
 		}
 	}
