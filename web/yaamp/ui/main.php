@@ -111,8 +111,8 @@ function showPageHeader()
 				debuglog("admin {$_SERVER['REMOTE_ADDR']}");
 
 			showItemHeader(controller()->id=='coin', '/coin', 'Coins');
-			showItemHeader($action=='common', '/site/common', 'Dashboard');
-			showItemHeader(controller()->id=='site'&&$action=='admin', "/site/admin", 'Wallets');
+			showItemHeader($action=='common', '/admin/dashboard', 'Dashboard');
+			showItemHeader(controller()->id=='admin'&&$action=='coinwallets', "/admin/coinwallets", 'Wallets');
 
 			if (YAAMP_RENTAL)
 				showItemHeader(controller()->id=='renting' && $action=='admin', '/renting/admin', 'Jobs');

@@ -76,7 +76,7 @@ class CronjobController extends CommonController
 		BackendUsersUpdate();
 
 		BackendUpdateServices();
-		BackendUpdateDeposit();
+		//BackendUpdateDeposit();
 
 		MonitorBTC();
 

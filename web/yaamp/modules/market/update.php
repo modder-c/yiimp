@@ -1,6 +1,6 @@
 <?php
 
-echo "<a href='/site/coin?id=$coin->id'>$coin->name</a> ";
+echo "<a href='/admin/coin?id=$coin->id'>$coin->name</a> ";
 echo "$market->name<br>";
 
 $this->widget('UniForm');

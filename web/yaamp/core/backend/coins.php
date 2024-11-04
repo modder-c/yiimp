@@ -228,13 +228,6 @@ function BackendCoinsUpdate()
 						$coin->reward -= arraySafeVal($template['masternode'],'amount',0)/100000000;
 					}
 					break;
-				case 'VKAX':
-					if(isset($template['masternode'])) 
-					{
-						if (arraySafeVal($template,'masternode_payments_started'))
-						$coin->reward -= arraySafeVal($template['masternode'],'amount',0)/100000000;
-					}
-					break;
 
 				default:
 					if(isset($template['masternode']) && arraySafeVal($template,'masternode_payments_enforced')) 
