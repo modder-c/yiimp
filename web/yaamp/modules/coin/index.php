@@ -64,7 +64,7 @@ foreach($coins as $coin)
 	echo '<td><b><a href="/coin/update?id='.$coin->id.'">'.$coin->name.'</a></b></td>';
 
 	if($this->admin)
-		echo "<td><b><a href='/site/update?id=$coin->id'>$coin->symbol</a></b></td>";
+		echo "<td><b><a href='/admin/coinupdate?id=$coin->id'>$coin->symbol</a></b></td>";
 	else
 		echo "<td><b>$coin->symbol</b></td>";
 
