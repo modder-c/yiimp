@@ -5,14 +5,14 @@
 function getAdminSideBarLinks()
 {
 $links = <<<end
-<a href="/site/exchange">Exchanges</a>&nbsp;
-<a href="/site/botnets">Botnets</a>&nbsp;
-<a href="/site/user">Users</a>&nbsp;
-<a href="/site/worker">Workers</a>&nbsp;
-<a href="/site/version">Version</a>&nbsp;
-<a href="/site/earning">Earnings</a>&nbsp;
-<a href="/site/payments">Payments</a>&nbsp;
-<a href="/site/monsters">Big Miners</a>&nbsp;
+<a href="/admin/exchange">Exchanges</a>&nbsp;
+<a href="/admin/botnets">Botnets</a>&nbsp;
+<a href="/admin/user">Users</a>&nbsp;
+<a href="/admin/worker">Workers</a>&nbsp;
+<a href="/admin/version">Version</a>&nbsp;
+<a href="/admin/earning">Earnings</a>&nbsp;
+<a href="/admin/payments">Payments</a>&nbsp;
+<a href="/admin/monsters">Big Miners</a>&nbsp;
 end;
 	return $links;
 }
@@ -20,24 +20,24 @@ end;
 // shared by wallet "tabs", to move in another php file...
 function getAdminWalletLinks($coin, $info=NULL, $src='wallet')
 {
-	$html = CHtml::link("<b>COIN PROPERTIES</b>", '/site/update?id='.$coin->id);
+	$html = CHtml::link("<b>COIN PROPERTIES</b>", '/admin/coinupdate?id='.$coin->id);
 	if($info) {
 		$html .= ' || '.$coin->createExplorerLink("<b>EXPLORER</b>");
-		$html .= ' || '.CHtml::link("<b>PEERS</b>", '/site/peers?id='.$coin->id);
+		$html .= ' || '.CHtml::link("<b>PEERS</b>", '/admin/coinpeers?id='.$coin->id);
 		if (YAAMP_ADMIN_WEBCONSOLE)
-			$html .= ' || '.CHtml::link("<b>CONSOLE</b>", '/site/console?id='.$coin->id);
-		$html .= ' || '.CHtml::link("<b>TRIGGERS</b>", '/site/triggers?id='.$coin->id);
+			$html .= ' || '.CHtml::link("<b>CONSOLE</b>", '/admin/coinconsole?id='.$coin->id);
+		$html .= ' || '.CHtml::link("<b>TRIGGERS</b>", '/admin/cointriggers?id='.$coin->id);
 		if ($src != 'wallet')
-			$html .= ' || '.CHtml::link("<b>{$coin->symbol}</b>", '/site/coin?id='.$coin->id);
+			$html .= ' || '.CHtml::link("<b>{$coin->symbol}</b>", '/admin/coin?id='.$coin->id);
 	}
 
 	if(!$info && $coin->enable)
-		$html .= '<br/>'.CHtml::link("<b>STOP COIND</b>", '/site/stopcoin?id='.$coin->id);
+		$html .= '<br/>'.CHtml::link("<b>STOP COIND</b>", '/admin/stopcoin?id='.$coin->id);
 
 	if($coin->auto_ready)
-		$html .= '<br/>'.CHtml::link("<b>UNSET AUTO</b>", '/site/unsetauto?id='.$coin->id);
+		$html .= '<br/>'.CHtml::link("<b>UNSET AUTO</b>", '/admin/coinunsetauto?id='.$coin->id);
 	else
-		$html .= '<br/>'.CHtml::link("<b>SET AUTO</b>", '/site/setauto?id='.$coin->id);
+		$html .= '<br/>'.CHtml::link("<b>SET AUTO</b>", '/admin/coinsetauto?id='.$coin->id);
 
 	$html .= '<br/>';
 

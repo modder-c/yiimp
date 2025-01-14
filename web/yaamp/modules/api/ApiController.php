@@ -117,6 +117,7 @@ class ApiController extends CommonController
 
         ksort($stats);
 
+        header('Content-Type: application/json');
         $json = json_encode($stats);
         echo $json;
 
@@ -248,6 +249,7 @@ class ApiController extends CommonController
             controller()->memcache->set("api_currencies", $json, 15, MEMCACHE_COMPRESSED);
         }
 
+        header('Content-Type: application/json');
         echo str_replace("},", "},\n", $json);
     }
 
@@ -279,6 +281,7 @@ class ApiController extends CommonController
         if (!$coin)
             return;
 
+        header('Content-Type: application/json');
         echo "{";
         echo "\"currency\": \"{$coin->symbol}\", ";
         echo "\"unsold\": $total_unsold, ";
@@ -316,6 +319,8 @@ class ApiController extends CommonController
         $coin = getdbo('db_coins', $user->coinid);
         if (!$coin)
             return;
+
+        header('Content-Type: application/json');
 
         echo "{";
         echo "\"currency\": " . json_encode($coin->symbol) . ", ";
@@ -392,6 +397,8 @@ class ApiController extends CommonController
 
         $balance     = bitcoinvaluetoa($renter->balance);
         $unconfirmed = bitcoinvaluetoa($renter->unconfirmed);
+
+        header('Content-Type: application/json');
 
         echo "{";
         echo "\"balance\": $balance, ";

@@ -27,7 +27,8 @@ bool client_subscribe(YAAMP_CLIENT *client, json_value *json_params)
 	//if(client_find_my_ip(client->sock->ip)) return false;
 	get_next_extraonce1(client->extranonce1_default);
 
-	client->extranonce2size_default = YAAMP_EXTRANONCE2_SIZE;
+	if(!strcmp(g_stratum_algo,"neoscrypt-xaya")) client->extranonce2size_default = 2;
+	else client->extranonce2size_default = YAAMP_EXTRANONCE2_SIZE;
 	client->difficulty_actual = g_stratum_difficulty;
 
 	strcpy(client->extranonce1, client->extranonce1_default);
@@ -121,8 +122,14 @@ bool client_subscribe(YAAMP_CLIENT *client, json_value *json_params)
 		debuglog("new client with nonce %s\n", client->extranonce1);
 	}
 
-	client_send_result(client, "[[[\"mining.set_difficulty\",\"%.3g\"],[\"mining.notify\",\"%s\"]],\"%s\",%d]",
-		client->difficulty_actual, client->notify_id, client->extranonce1, client->extranonce2size);
+	if (strstr(g_current_algo->name, "equihash") == g_current_algo->name) {
+		// send extranonce
+		client_send_result(	client, "[null,\"%s\"]",client->extranonce1);
+	}
+	else {
+		client_send_result(client, "[[[\"mining.set_difficulty\",\"%.3g\"],[\"mining.notify\",\"%s\"]],\"%s\",%d]",
+			client->difficulty_actual, client->notify_id, client->extranonce1, client->extranonce2size);
+	}
 
 	return true;
 }
@@ -333,13 +340,21 @@ bool client_update_block(YAAMP_CLIENT *client, json_value *json_params)
 	coind_create_job(coind);
 	object_unlock(coind);
 
-	if(coind->isaux) for(CLI li = g_list_coind.first; li; li = li->next)
+	if(coind->isaux)
 	{
-		YAAMP_COIND *coind = (YAAMP_COIND *)li->data;
-		if(!coind_can_mine(coind)) continue;
-		if(coind->pos) continue;
+		/*  only update job for DOGE ,
+			other coins ignore intermediate updates to avoid fast job re-issue	*/
+		if (strcmp(coind->symbol, "DOGE") == 0)
+		{
+			for(CLI li = g_list_coind.first; li; li = li->next)
+			{
+				YAAMP_COIND *coind = (YAAMP_COIND *)li->data;
+				if(!coind_can_mine(coind)) continue;
+				if(coind->pos) continue;
 
-		coind_create_job(coind);
+				coind_create_job(coind);
+			}
+		}
 	}
 
 	job_signal();
@@ -531,7 +546,7 @@ void *client_thread(void *p)
 	memset(client, 0, sizeof(YAAMP_CLIENT));
 
 	client->reconnectable = true;
-	client->speed = 1;
+	client->speed = YAAMP_CLIENT_MINSPEED * 10;
 	client->created = time(NULL);
 	client->last_best = time(NULL);
 
@@ -670,8 +685,7 @@ void *client_thread(void *p)
 		object_delete(client);
 	} else {
 		// only clients sockets in g_list_client are purged (if marked deleted)
-		socket_close(client->sock);
-		delete client;
+		client_delete(client);
 	}
 
 	pthread_exit(NULL);

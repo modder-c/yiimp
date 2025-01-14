@@ -1,5 +1,8 @@
 <?php
 
+// function for distribute blockreward for given block proportional on user-shares 
+//  todo: needs rework to cover correctly all cases (non autoexchange mode, solo etc.)
+
 function BackendBlockNew($coin, $db_block)
 {
 //	debuglog("NEW BLOCK $coin->name $db_block->height");
@@ -7,26 +10,26 @@ function BackendBlockNew($coin, $db_block)
 	if(!$reward || $db_block->algo == 'PoS' || $db_block->algo == 'MN') return;
 	if($db_block->category == 'stake' || $db_block->category == 'generated') return;
 
-	$is_shared = getdbocount(
-		'db_workers',
-		"algo=:algo and userid=:userid and id=:workerid and password not like '%m=solo%'",
-		array(
-			':algo'=>$db_block->algo,
-			':userid'=>$db_block->userid,
-			':workerid'=>$db_block->workerid
-		)
-	);
-	$is_solo = getdbocount(
-		'db_workers',
-		"algo=:algo and userid=:userid and id=:workerid and password like '%m=solo%'", 
-		array(
-			':algo'=>$db_block->algo,
-			':userid'=>$db_block->userid,
-			':workerid'=>$db_block->workerid
-		)
-	);
-	
-	if ($is_shared)
+	if (is_null($db_block->solo)) {
+		$count_solo_worker = getdbocount(
+			'db_workers',
+			"algo=:algo and userid=:userid and id=:workerid and password like '%m=solo%'", 
+			array(
+				':algo'=>$db_block->algo,
+				':userid'=>$db_block->userid,
+				':workerid'=>$db_block->workerid
+			)
+		);
+		$is_solo = ($count_solo_worker > 0);
+	} else {
+		$is_solo = ($db_block->solo > 0);
+	}
+
+	$sqlCond =	" blocknumber <= ".intval($db_block->height).
+				" AND blockrewarded IS NULL".
+				" AND coinid = ".intval($coin->id);
+
+	if (!$is_solo)
 	{
 		debuglog("Shared Mining Found Block : $coin->id height $db_block->height with $db_block->userid");
 
@@ -41,18 +44,12 @@ function BackendBlockNew($coin, $db_block)
 	
 		foreach ($solo_workers as $solo_worker)
 		{
-			$sqlCond = "";
-			if(!YAAMP_ALLOW_EXCHANGE) // only one coin mined
-				$sqlCond .= " coinid = ".intval($coin->id);
-				
 			dborun("DELETE FROM shares WHERE algo=:algo AND workerid=:workerid AND $sqlCond",array(':algo'=>$coin->algo,':workerid'=>$solo_worker->id));
 		}
 
-		$sqlCond = "valid = 1";
-		if(!YAAMP_ALLOW_EXCHANGE) // only one coin mined
-			$sqlCond .= " AND coinid = ".intval($coin->id);
+		$sqlCond .= " AND valid = 1";
 
-		$total_hash_power = dboscalar("SELECT SUM(difficulty) FROM shares WHERE $sqlCond AND algo=:algo", array(':algo'=>$coin->algo));
+		$total_hash_power = dboscalar("SELECT SUM(difficulty) FROM shares WHERE algo=:algo AND $sqlCond", array(':algo'=>$coin->algo));
 		if(!$total_hash_power) return;
 
 		$list = dbolist("SELECT userid, SUM(difficulty) AS total FROM shares WHERE $sqlCond AND algo=:algo GROUP BY userid",
@@ -66,6 +63,8 @@ function BackendBlockNew($coin, $db_block)
 			$user = getdbo('db_accounts', $item['userid']);
 			if(!$user) continue;
 
+			$ucoin = getdbo('db_coins', $user->coinid);
+
 			$amount = $reward * $hash_power / $total_hash_power;
 		
 			if(!$user->no_fees) $amount = take_yaamp_fee($amount, $coin->algo);
@@ -74,30 +73,36 @@ function BackendBlockNew($coin, $db_block)
 				$amount = take_yaamp_fee($amount, $coin->algo, $user->donation);
 				if ($amount <= 0) continue;
 			}
-			$earning = new db_earnings;
-			$earning->userid = $user->id;
-			$earning->amount = $amount;
-			$earning->coinid = $coin->id;
-			$earning->blockid = $db_block->id;
-			$earning->create_time = $db_block->time;
-			$earning->price = $coin->price;
 
-			if($db_block->category == 'generate')
-			{
-				$earning->mature_time = time();
-				$earning->status = 1;
-			}
-			else	// immature
-				$earning->status = 0;
+			if (!YAAMP_ALLOW_EXCHANGE || $ucoin->id == $coin->id ||
+				($ucoin->auto_exchange && $coin->auto_exchange)) {
+
+				$earning = new db_earnings;
+				$earning->userid = $user->id;
+				$earning->amount = $amount;
+				$earning->coinid = $coin->id;
+				$earning->blockid = $db_block->id;
+				$earning->create_time = $db_block->time;
+				$earning->price = ($coin->auto_exchange) ? $coin->price : 0;
+
+				if($db_block->category == 'generate')
+				{
+					$earning->mature_time = time();
+					$earning->status = 1;
+				}
+				else	// immature
+					$earning->status = 0;
+			
+				if ($ucoin) {
+					if(!YAAMP_ALLOW_EXCHANGE && $ucoin->algo != $coin->algo) {
+						debuglog($coin->symbol.": invalid earning for {$user->username}, user coin is {$ucoin->symbol}");
+						$earning->status = -1;
+					}
+				}
 		
-			$ucoin = getdbo('db_coins', $user->coinid);
-			if(!YAAMP_ALLOW_EXCHANGE && $ucoin && $ucoin->algo != $coin->algo) {
-				debuglog($coin->symbol.": invalid earning for {$user->username}, user coin is {$ucoin->symbol}");
-				$earning->status = -1;
+				if (!$earning->save())
+					debuglog(__FUNCTION__.": Unable to insert earning!");
 			}
-		
-			if (!$earning->save())
-				debuglog(__FUNCTION__.": Unable to insert earning!");
 
 			$user->last_earning = time();
 			$user->save();
@@ -113,8 +118,7 @@ function BackendBlockNew($coin, $db_block)
 			$db_block->save();
 		}
 	}
-	
-	else if ($is_solo) 
+	else 
 	{
 		debuglog("Solo Mining Found Block : $coin->id height $db_block->height with $db_block->userid");
 
@@ -122,34 +126,41 @@ function BackendBlockNew($coin, $db_block)
 		$amount = $reward;
 		$user = getdbo('db_accounts', $db_block->userid);
 		if(!$user) return;
-		
-		if(!$user->no_fees) $amount = take_yaamp_fee($amount, $coin->algo, YAAMP_FEES_SOLO);
-	
-		$earning = new db_earnings;
-		$earning->userid = $user->id;
-		$earning->amount = $amount;
-		$earning->coinid = $coin->id;
-		$earning->blockid = $db_block->id;
-		$earning->create_time = $db_block->time;
-		$earning->price = $coin->price;
 
-		if($db_block->category == 'generate')
-		{
-			$earning->mature_time = time();
-			$earning->status = 1;
-		}
-		else	// immature
-			$earning->status = 0;
-	
 		$ucoin = getdbo('db_coins', $user->coinid);
-		if(!YAAMP_ALLOW_EXCHANGE && $ucoin && $ucoin->algo != $coin->algo) {
-			debuglog($coin->symbol.": invalid earning for {$user->username}, user coin is {$ucoin->symbol}");
-			$earning->status = -1;
-		}
+
+		if(!$user->no_fees) $amount = take_yaamp_fee($amount, $coin->algo, YAAMP_FEES_SOLO);
+
+		if (!YAAMP_ALLOW_EXCHANGE || $ucoin->id == $coin->id ||
+			($ucoin->auto_exchange && $coin->auto_exchange)) {
+
+			$earning = new db_earnings;
+			$earning->userid = $user->id;
+			$earning->amount = $amount;
+			$earning->coinid = $coin->id;
+			$earning->blockid = $db_block->id;
+			$earning->create_time = $db_block->time;
+			$earning->price = ($coin->auto_exchange) ? $coin->price : 0 ;
+
+			if($db_block->category == 'generate')
+			{
+				$earning->mature_time = time();
+				$earning->status = 1;
+			}
+			else	// immature
+				$earning->status = 0;
 		
-		if (!$earning->save())
-			debuglog(__FUNCTION__.": Unable to insert earning!");
-	
+			if ($ucoin) {
+				if(!YAAMP_ALLOW_EXCHANGE && $ucoin->algo != $coin->algo) {
+					debuglog($coin->symbol.": invalid earning for {$user->username}, user coin is {$ucoin->symbol}");
+					$earning->status = -1;
+				}
+			}
+			
+			if (!$earning->save())
+				debuglog(__FUNCTION__.": Unable to insert earning!");
+		}
+
 		$user->last_earning = time();
 		$user->save();
 		
@@ -164,19 +175,20 @@ function BackendBlockNew($coin, $db_block)
 		$db_block->save();
 	}
 	
-	$delay = time() - 5*60;
-	$sqlCond = "time < $delay";
-	if(!YAAMP_ALLOW_EXCHANGE) // only one coin mined
-		$sqlCond .= " AND coinid = ".intval($coin->id);
-
+	// todo: optimize all queries by re-ordering where-conditions to lower occurence of possible mysql deadlock-error
 	try {
-		dborun("DELETE FROM shares WHERE algo=:algo AND $sqlCond", array(':algo'=>$coin->algo));
-	
+		dborun("DELETE FROM shares WHERE algo=:algo AND $sqlCond AND solo".(($is_solo)?"=1":"!=1"),
+				array(':algo'=>$coin->algo));
+//		dborun("UPDATE shares SET blocknumber = ".$db_block->height.", blockrewarded = ".$db_block->height." WHERE algo=:algo AND $sqlCond AND solo".(($is_solo)?"=1":"!=1"),
+//				array(':algo'=>$coin->algo));
 	} catch (CDbException $e) {
 
-		debuglog("unable to delete shares $sqlCond retrying...");
+		debuglog("unable to update shares $sqlCond retrying...");
 		sleep(1);
-		dborun("DELETE FROM shares WHERE algo=:algo AND $sqlCond", array(':algo'=>$coin->algo));
+		dborun("DELETE FROM shares WHERE algo=:algo AND $sqlCond AND solo".(($is_solo)?"=1":"!=1"),
+				array(':algo'=>$coin->algo));
+//		dborun("UPDATE shares SET blocknumber = ".$db_block->height.", blockrewarded = ".$db_block->height." WHERE algo=:algo AND $sqlCond AND solo".(($is_solo)?"=1":"!=1"),
+//				array(':algo'=>$coin->algo));
 		// [errorInfo] => array(0 => 'HY000', 1 => 1205, 2 => 'Lock wait timeout exceeded; try restarting transaction')
 		// [*:message] => 'CDbCommand failed to execute the SQL statement: SQLSTATE[HY000]: General error: 1205 Lock wait timeout exceeded; try restarting transaction'
 	} 
@@ -354,7 +366,7 @@ function BackendBlocksUpdate($coinid = NULL)
 			continue;
 		}
 
-		$block->confirmations = $tx['confirmations'];
+		$block->confirmations = (isset($tx['confirmations']))?$tx['confirmations']:0;
 
 		$category = $block->category;
 		if($block->confirmations == -1 && $coin->enable && $coin->auto_ready) {
@@ -362,7 +374,7 @@ function BackendBlocksUpdate($coinid = NULL)
 			$block->amount = 0;
 		}
 
-		else if(isset($tx['details']) && isset($tx['details'][0]))
+		else if(isset($tx['details']) && isset($tx['details'][0]) && isset($tx['details'][0]['category']))
 			$category = $tx['details'][0]['category'];
 
 		else if(isset($tx['category']))
@@ -457,17 +469,17 @@ function BackendBlockFind2($coinid = NULL)
 			$db_block->coin_id = $coin->id;
 			$db_block->category = 'immature';			//$transaction['category'];
 			$db_block->time = $transaction['time'];
-			$db_block->amount = $transaction['amount'];
+			$db_block->amount = (isset($transaction['amount']))? $transaction['amount'] : 0;
 			$db_block->algo = $coin->algo;
 
 			if (arraySafeVal($blockext,'nonce',0) != 0) {
 				$db_block->difficulty_user = hash_to_difficulty($coin, $transaction['blockhash']);
-			} else if ($coin->rpcencoding == 'POS') {
+			} else if (($coin->rpcencoding == 'POS') && (arraySafeVal($blockext,'flags') == 'proof-of-stake')) {
 				$db_block->category = 'stake';
 			}
 
 			// masternode earnings...
-			if (empty($db_block->userid) && $transaction['amount'] == 0 && $transaction['generated']) {
+			if (empty($db_block->userid) && ((!isset($transaction['amount'])) || ($transaction['amount'] == 0)) && $transaction['generated']) {
 				$db_block->algo = 'MN';
 				$tx = $remote->getrawtransaction($transaction['txid'], 1);
 

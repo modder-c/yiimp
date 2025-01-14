@@ -11,10 +11,10 @@ function BackendDoBackup()
 		$ziptool = "gzip"; $ext = ".gz";
 	}
 
-	include_once("/etc/yiimp/keys.php");
-
 	$host = YAAMP_DBHOST;
 	$db   = YAAMP_DBNAME;
+
+	if ((!defined("YIIMP_MYSQLDUMP_USER")) || (!defined("YIIMP_MYSQLDUMP_PASS"))) return;
 
 	$user = YIIMP_MYSQLDUMP_USER;
 	$pass = YIIMP_MYSQLDUMP_PASS;
@@ -99,9 +99,9 @@ function consolidateOldShares()
 	dborun("DELETE FROM shares WHERE time < $delay AND valid = 0");
 
 	$t1 = time() - 48*3600;
-	$list = dbolist("SELECT coinid, userid, workerid, algo, AVG(time) AS time, SUM(difficulty) AS difficulty, AVG(share_diff) AS share_diff ".
-		"FROM shares WHERE valid AND time < $t1 AND pid > 0 ".
-		"GROUP BY coinid, userid, workerid, algo ORDER BY coinid, userid");
+	$list = dbolist("SELECT coinid, userid, workerid, algo, AVG(time) AS time, SUM(difficulty) AS difficulty, MAX(share_diff) AS share_diff, blocknumber, blockrewarded ".
+		"FROM shares WHERE pid > 0 AND time < $t1 AND valid ".
+		"GROUP BY coinid, userid, workerid, algo, blocknumber, blockrewarded ORDER BY coinid, userid");
 	$pruned = 0;
 	foreach ($list as $row) {
 		$share = new db_shares;
@@ -113,14 +113,28 @@ function consolidateOldShares()
 		$share->time = (int) $row['time'];
 		$share->difficulty = $row['difficulty'];
 		$share->share_diff = $row['share_diff'];
+		$share->blocknumber = $row['blocknumber'];
+		$share->blockrewarded = $row['blockrewarded'];
 		$share->valid = 1;
 		$share->pid = 0;
 		if ($share->save()) {
-			$pruned += dborun("DELETE FROM shares WHERE userid=:userid AND coinid=:coinid AND workerid=:worker AND pid > 0 AND time < $t1", array(
-				':userid' => $row['userid'],
-				':coinid' => $row['coinid'],
-				':worker' => $row['workerid'],
-			));
+            if (!is_null($row['blockrewarded'])) {
+		        $pruned += dborun("DELETE FROM shares WHERE blocknumber=:blocknumber AND blockrewarded=:blockrewarded AND coinid=:coinid AND pid > 0 AND time < $t1 AND userid=:userid AND workerid=:worker", array(
+		            ':blocknumber' => $row['blocknumber'],
+		            ':blockrewarded' => $row['blockrewarded'],
+		            ':coinid' => $row['coinid'],
+		            ':userid' => $row['userid'],
+		            ':worker' => $row['workerid'],
+		        ));
+            }
+            else {
+                $pruned += dborun("DELETE FROM shares WHERE blocknumber=:blocknumber AND blockrewarded IS NULL AND coinid=:coinid AND pid > 0 AND time < $t1 AND userid=:userid AND workerid=:worker", array(
+                   ':blocknumber' => $row['blocknumber'],
+                   ':coinid' => $row['coinid'],
+                   ':userid' => $row['userid'],
+                   ':worker' => $row['workerid'],
+               ));
+            }
 		}
 	}
 	if ($pruned) {
@@ -148,6 +162,7 @@ function BackendCleanDatabase()
 	dborun("delete from balanceuser where time<$delay");
 	dborun("delete from exchange where send_time<$delay");
 	dborun("DELETE FROM shares WHERE time<$delay AND coinid NOT IN (select id from coins)");
+	dborun("UPDATE shares SET workerid = 0 WHERE workerid > 0 AND workerid NOT IN (SELECT id FROM workers)");
 
 	consolidateOldShares();
 

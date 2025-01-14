@@ -73,6 +73,10 @@ string merkle_with_first(vector<string> steps, string f);
 
 //////////////////////////////////////////////////////////////////////////
 
+typedef unsigned char uchar;
+void cbin2hex(char *out, const char *in, size_t len);
+char *bin2hex(const uchar *in, size_t len);
+
 bool base58_decode(const char *input, char *output);
 bool is_base58(char *input);
 
@@ -96,13 +100,19 @@ void binlify(unsigned char *bin, const char *hex);
 unsigned int htoi(const char *s);
 uint64_t htoi64(const char *s);
 
-uint64_t decode_compact(const char *input);
+uint64_t decode_compact(const char *input, int shiftdiff = 19);
 uint64_t sharetotarg(double diff);
 
 uint64_t diff_to_target(double difficulty);
+uint64_t diff_to_target_coin(double difficulty, int powlimit_bits);
+void diff_to_target_equi(uint32_t* target, double diff);
 double target_to_diff(uint64_t target);
+double target_to_diff_coin(uint64_t target, int powlimit_bits);
 
 uint64_t get_hash_difficulty(unsigned char *input);
+
+double equi_network_diff(uint32_t *work_data);
+uint64_t get_equihash_difficulty(unsigned char *input);
 
 long long current_timestamp();
 long long current_timestamp_dms();
@@ -112,6 +122,7 @@ int resident_size();
 
 void string_lower(char *s);
 void string_upper(char *s);
+int string_tokenize(std::string const &input_string, const char delimiter, std::vector<std::string> &string_array);
 
 int getblocheight(const char *coinb1);
 

@@ -1,174 +1,65 @@
 <?php
 
-function yaamp_get_algos()
-{
-	/* Toggle Site Algos Here */
-	return array(
-		'sha256',
-		'sha256csm',
-		'sha256dt',
-		'sha256t',
-		'sha3d',
-		'sha512256d',
-		'scrypt',
-		'scryptn',
-		'allium',
-		'anime',
-		'argon2',
-		'argon2d250',
-		'argon2d-dyn',
-		'argon2d4096',
-		'argon2d16000',
-		'aergo',
-		'balloon',
-		'bastion',
-		'bcd',
-		'bitcore',
-		'blake',
-		'blakecoin',
-		'blake2s',
-		'bmw512',
-		'cosa',
-		'cpupower',
-		'curvehash',
-		'decred',
-		'dedal',
-		'deep',
-		'heavyhash',
-		'hmq1725',
-		'honeycomb',
-		'keccak',
-		'keccakc',
-		'jha',
-		'hex',
-		'hsr',
-		'lbry',
-		'lbk3',
-		'luffa',
-		'lyra2',
-		'lyra2TDC',
-		'lyra2v2',
-		'lyra2v3',
-		'lyra2z',
-		'lyra2z330',
-		'lyra2vc0ban',
-		'neoscrypt',
-		'nist5',
-		'penta',
-		'polytimos',
-		'power2b',
-		'quark',
-		'qubit',
-		'rainforest',
-		'renesis',
-		'c11',
-		'x11',
-		'x11evo',
-		'x11k',
-		'x11kvs',
-		'x12',
-		'x13',
-		'x14',
-		'x15',
-		'x16r',
-		'x16rt',
-		'x16rv2',
-		'x16s',
-		'x17',
-		'x18',
-		'x20r',
-		'x21s',
-		'x22i',
-		'x25x',
-		'xevan',
-		'geek',
-		'gr',
-		'groestl', // dmd-gr -m 256 (deprecated)
-		'dmd-gr',
-		'myr-gr',
-		'm7m',
-		'memehash',
-		'megabtx',
-		'megamec',
-		'mike',
-		'minotaur',
-		'minotaurx',
-		'phi',
-		'phi2',
-		'phi5',
-		'0x10',
-		'pipe',
-		'sib',
-		'skydoge',
-		'skein',
-		'skein2',
-		'skunk',
-		'sonoa',
-		'timetravel',
-		'tribus',
-		'a5a',
-		'vanilla',
-		'veltor',
-		'velvet',
-		'vitalium',
-		'yescrypt',
-		'yescryptR8',
-		'yescryptR16',
-		'yescryptR32',
-		'yespower',
-		'yespowerIC',
-		'yespowerIOTS',
-		'yespowerLITB',
-		'yespowerLTNCG',
-		'yespowerR16',
-		'yespowerRES',
-		'yespowerSUGAR',
-		'yespowerTIDE',
-		'yespowerURX',
-		'yespowerMGPC',
-		'yespowerARWN',
-		'whirlpool',
-		'zr5',
-		
-		'astralhash',
-		'globalhash',
-		'jeonghash',
-		'padihash',
-		'pawelhash',
-		
-	);
+function yaamp_get_algo_list() {
+    
+    $algo_list = controller()->memcache->get("yaamp_algo_list");
+    if($algo_list) return $algo_list;
+    
+    $algoslist = dbolist("select name,color,speedfactor,port,visible,powlimit_bits from algos", [] );
+    
+    if($algoslist) {
+        controller()->memcache->set("yaamp_algo_list", $algoslist);
+        return $algoslist;
+    }
+
+    /* Default Array for Algos */
+    $algoslist = [ ['name' => 'sha256',	'color' => '#d0d0a0', 'speedfactor' => 1 , 'port' => 3333, 'visible' => 0], ];
+
+    controller()->memcache->set("yaamp_algo_list", $algoslist);
+    return $algoslist;
+}
+
+function yaamp_get_algos( $only_visible = false) {
+    
+    if ($only_visible) $storage_name = "yaamp_visible_algos";
+    else $storage_name = "yaamp_unvisible_algos";
+    
+    $algos = controller()->memcache->get($storage_name);
+    if($algos) return $algos;
+    
+    $algoslist = yaamp_get_algo_list();
+    if ($algoslist) {
+        foreach ($algoslist AS $algorow) {
+            if (isset($algorow['name'])) {
+                if (($only_visible) && ($algorow['visible'] == 0)) continue;
+                $algos[] = $algorow['name'];
+            }
+        }
+    }
+    
+    if($algos) {
+        controller()->memcache->set($storage_name, $algos);
+    }
+    
+    return $algos;
 }
 
 // Used for graphs and 24h profit
 // GH/s for fast algos like sha256
 function yaamp_algo_mBTC_factor($algo)
 {
-	switch($algo) {
-	case 'sha256':
-	case 'sha256t':
-	case 'blake':
-	case 'blakecoin':
-	case 'blake2s':
-	case 'decred':
-	case 'keccak':
-	case 'keccakc':
-	case 'lbry':
-	case 'power2b':
-		return 0.001;
-	case 'gr':
-		return 0.001;
-	case 'mike':
-		return 0.001;
-	case 'yespowerARWN':
-		return 0.001;
-	case 'vanilla':
-		return 1000;
-	case 'heavyhash':
-	case 'sha512256d':
-		return 1000;
-	default:
-		return 1;
-	}
+    $algofactor = 1;
+    $algoslist = yaamp_get_algo_list();
+    if ($algoslist) {
+        foreach ($algoslist AS $algorow) {
+            if ((isset($algorow['name'])) && ($algorow['name'] == $algo)) {
+                $algofactor = $algorow['speedfactor'];
+                break;
+            }
+        }
+    }
+    
+    return $algofactor;
 }
 
 // mBTC coef per algo
@@ -220,298 +111,58 @@ function yaamp_get_algo_norm($algo)
 	return $a[$algo];
 }
 
-function getAlgoColors($algo)
-{
-	$a = array(
-		'sha256'	=> '#d0d0a0',
-		'sha256csm'	=> '#d0d0a0',
-		'sha256dt'	=> '#d0d0f0',
-		'sha256t'	=> '#d0d0f0',
-		'sha3d'		=> '#d0d0f0',
-		'sha512256d'	=> '#d0d0a0',
-		'scrypt'	=> '#c0c0e0',
-		'neoscrypt'	=> '#a0d0f0',
-		'scryptn'	=> '#d0d0d0',
-		'c11'		=> '#a0a0d0',
-		'cosa'		=> '#a0a0d0',
-		'decred'	=> '#f0f0f0',
-		'dedal'		=> '#f0f0f0',
-		'deep'		=> '#e0ffff',
-		'x11'		=> '#f0f0a0',
-		'x11evo'	=> '#c0f0c0',
-		'x11k'		=> '#f0f0a0',
-		'x11kvs'	=> '#f0f0a0',
-		'x12'		=> '#ffe090',
-		'x13'		=> '#ffd880',
-		'bcd'		=> '#ffd880',
-		'x14'		=> '#f0c080',
-		'x15'		=> '#f0b080',
-		'x16r'		=> '#f0b080',
-		'x16rt'		=> '#f0b080',
-		'x16rv2'	=> '#f0b080',
-		'x16s'		=> '#f0b080',
-		'x17'		=> '#f0b0a0',
-		'x18'		=> '#f0b0a0',
-		'x20r'		=> '#f0b0a0',
-		'x21s'		=> '#f0b0a0',
-		'x22i'		=> '#f0f0a0',
-		'x25x'		=> '#f0f0a0',
-		'xevan'         => '#f0b0a0',
-		'allium'	=> '#80a0d0',
-		'anime'		=> '#80a0d0',
-		'argon2'	=> '#e0d0e0',
-		'argon2d250'	=> '#e0d0e0',
-		'argon2d-dyn'	=> '#e0d0e0',
-		'argon2d4096'	=> '#e0d0e0',
-		'argon2d16000'	=> '#e0d0e0',
-		'aergo'		=> '#e0d0e0',
-		'bastion'	=> '#e0b0b0',
-		'balloon'	=> '#e0b0b0',
-		'blake'		=> '#f0f0f0',
-		'blakecoin'	=> '#f0f0f0',
-		'bmw512'	=> '#f0f0f0',
-		'curvehash'	=> '#d0a0a0',
-		'geek'		=> '#d0a0a0',
-		'gr'		=> '#80a0d0',
-		'groestl'	=> '#d0a0a0',
-		'jha'		=> '#a0d0c0',
-		'dmd-gr'	=> '#a0c0f0',
-		'myr-gr'	=> '#a0c0f0',
-		'hmq1725'	=> '#ffa0a0',
-		'hsr'		=> '#aa70ff',
-		'keccak'	=> '#c0f0c0',
-		'keccakc'	=> '#c0f0c0',
-		'heavyhash'	=> '#c0f0c0',
-		'hex'		=> '#c0f0c0',
-		'honeycomb'	=> '#c0f0c0',
-		'lbry'		=> '#b0d0e0',
-		'luffa'		=> '#a0c0c0',
-		'm7m'		=> '#d0a0a0',
-		'skydoge'	=> '#d0a0a0',
-		'memehash'	=> '#d0f0a0',
-		'megabtx'	=> '#d0f0a0',
-		'megamec'	=> '#d0f0a0',
-		'mike'		=> '#d0f0a0',
-		'minotaur'	=> '#d0f0a0',
-		'minotaurx'	=> '#d0f0a0',
-		'penta'		=> '#80c0c0',
-		'nist5'		=> '#c0e0e0',
-		'quark'		=> '#c0c0c0', 
-		'qubit'		=> '#d0a0f0',
-		'rainforest'	=> '#d0f0a0', 
-		'renesis'	=> '#f0b0a0',
-		'lyra2'		=> '#80a0f0',
-		'lyra2TDC'		=> '#80a0f0',
-		'lyra2v2'	=> '#80c0f0',
-		'lyra2v3'	=> '#80c0f0',
-		'lyra2vc0ban'	=> '#80c0f0',
-		'lyra2z'	=> '#80b0f0',
-		'lyra2z330'	=> '#80b0f0',
-		'phi'		=> '#a0a0e0',
-		'phi2'		=> '#a0a0e0',
-		'phi5'		=> '#aba0e0',
-		'0x10'	=> '#aba0e0',
-		'pipe'		=> '#a0a0e0',
-		'polytimos'	=> '#dedefe',
-		'power2b'	=> '#e2d0d2',
-		'sib'		=> '#a0a0c0',
-		'skein'		=> '#80a0a0',
-		'skein2'	=> '#c8a060',
-		'sonoa'		=> '#c8a060',
-		'timetravel'	=> '#f0b0d0',
-		'bitcore'	=> '#f790c0',
-		'skunk'		=> '#dedefe',
-		'tribus'	=> '#c0d0d0',
-		'a5a'		=> '#f0f0f0',
-		'vanilla'	=> '#f0f0f0',
-		'velvet'	=> '#aac0cc',
-		'vitalium'	=> '#f0b0a0',
-		'whirlpool'	=> '#d0e0e0',
-		'yescrypt'	=> '#e0d0e0',
-		'yescryptR8'	=> '#e0d0e0',
-		'yescryptR16'	=> '#e0d0e0',
-		'yescryptR32'	=> '#e0d0e0',
-		'yespower' 		=> '#e2d0d2',
-		'yespowerIC' 	=> '#e2d0d2',
-		'yespowerIOTS' 	=> '#e2d0d2',
-		'yespowerLITB' 	=> '#e2d0d2',
-		'yespowerLTNCG' 	=> '#e2d0d2',
-		'yespowerR16' 	=> '#e2d0d2',
-		'yespowerRES' 	=> '#e2d0d2',
-		'yespowerSUGAR' 	=> '#e2d0d2',
-		'yespowerTIDE' 	=> '#e2d0d2',
-		'yespowerURX' 	=> '#e2d0d2',
-		'yespowerMGPC' 	=> '#e2d0d2',
-		'yespowerARWN' 	=> '#e2d0d2',
-		'cpupower' 	=> '#e2d0d2',
-		'zr5'		=> '#d0b0d0',
-		'lbk3'		=> '#809aef',
-		'lyra2'		=> '#80a0f0',
-		
-		'astralhash' => '#e2d0d2',
-		'globalhash' => '#e2d0d2',
-		'jeonghash' => '#e2d0d2',
-		'padihash' => '#e2d0d2',
-		'pawelhash' => '#e2d0d2',
-		
-
-		'MN'		=> '#ffffff', // MasterNode Earnings
-		'PoS'		=> '#ffffff'  // Stake
-	);
-
-	if(!isset($a[$algo]))
-		return '#ffffff';
-
-	return $a[$algo];
+function getAlgoColors($algo) {
+    
+    $algo_colors = controller()->memcache->get("yaamp_algo_colors");
+    if(!$algo_colors) {
+        $algoslist = yaamp_get_algo_list();
+        if ($algoslist) {
+            foreach ($algoslist AS $algorow) {
+                if (isset($algorow['name'])) $algo_colors[$algorow['name']] = $algorow['color'];
+            }
+        }
+        
+        if($algo_colors) {
+            controller()->memcache->set("yaamp_algo_colors", $algo_colors);
+        }
+    }
+    
+    if (isset($algo_colors[$algo]))
+        $algo_color = $algo_colors[$algo];
+        else
+            $algo_color = '#ffffff';
+            
+            return $algo_color;
 }
 
-function getAlgoPort($algo)
-{
-	$a = array(
-		'sha256'	=> 3333,
-		'sha256csm'	=> 3340,
-		'sha256dt'	=> 3338,
-		'sha256t'	=> 3339,
-		'sha3d'		=> 3335,
-		'sha512256d'	=> 7086,
-		'lbry'		=> 3334,
-		'scrypt'	=> 3433,
-		'timetravel'	=> 3555,
-		'bitcore'	=> 3556,
-		'balloon'	=> 5100,
-		'bcd'		=> 3643,
-		'bmw512'	=> 5787,
-		'c11'		=> 3573,
-		'cosa'		=> 3574,
-		'curvehash'	=> 3343,
-		'dedal'		=> 8833,
-		'deep'		=> 3535,
-		'x11'		=> 3533,
-		'x11evo'	=> 3553,
-		'x11k'		=> 3534,
-		'x11kvs'	=> 3536,
-		'x12'		=> 3233,
-		'x13'		=> 3633,
-		'x15'		=> 3733,
-		'x16r'		=> 3636,
-		'x16rt'		=> 7220,
-		'x16rv2'	=> 3637,
-		'x16s'		=> 3663,
-		'x17'		=> 3737,
-		'x18'		=> 3738,
-		'x20r'		=> 4300,
-		'x21s'		=> 3323,
-		'x22i'		=> 4200,
-		'x25x'		=> 4210,
-		'aergo'     => 3691,
-		'xevan'		=> 3739,
-		'hmq1725'	=> 3747,
-		'nist5'		=> 3833,
-		'x14'		=> 3933,
-		'geek'		=> 3692,
-		'gr'		=> 7070,
-		'quark'		=> 4033,
-		'whirlpool'	=> 4133,
-		'neoscrypt'	=> 4233,
-		'anime'		=> 4230,
-		'argon2'	=> 4234,
-		'argon2d250'	=> 4238,
-		'argon2d-dyn'	=> 4239,
-		'argon2d4096'	=> 4240,
-		'argon2d16000'	=> 4241,
-		'scryptn'	=> 4333,
-		'allium'	=> 4443,
-		'lbk3'		=> 5522,
-		'lyra2'		=> 4433,
-		'lyra2TDC'	=> 4434,
-		'lyra2v2'	=> 4533,
-		'lyra2v3'	=> 4550,
-		'lyra2vc0ban'	=> 4563,
-		'lyra2z'	=> 4553,
-		'lyra2z330'	=> 4555,
-		'jha'		=> 4633,
-		'qubit'		=> 4733,
-		'zr5'		=> 4833,
-		'skein'		=> 4933,
-		'sib'		=> 5033,
-		'sonoa'		=> 8733,
-		'keccak'	=> 5133,
-		'keccakc'	=> 5134,
-		'heavyhash'	=> 5136,
-		'hex'		=> 5135,
-		'honeycomb'	=> 7777,
-		'skein2'	=> 5233,
-		//'groestl'	=> 5333,
-		'dmd-gr'	=> 5333,
-		'myr-gr'	=> 5433,
-		'zr5'		=> 5533,
-		// 5555 to 5683 reserved
-		'blake'		=> 5733,
-		'blakecoin'	=> 5743,
-		'cpupower'	=> 4250,
-		'decred'	=> 3252,
-		'vanilla'	=> 5755,
-		'blake2s'	=> 5766,
-		'penta'		=> 5833,
-		'rainforest'	=> 7443,
-		'renesis' => 5252,
-		'luffa'		=> 5933,
-		'm7m'		=> 6033,
-		'veltor'	=> 5034,
-		'velvet'	=> 6133,
-		'vitalium'	=> 3233,
-		'yescrypt'	=> 6233,
-		'yescryptR8'	=> 6353,
-		'yescryptR16'	=> 6333,
-		'yescryptR32'	=> 6343,
-		'yespower'	=> 6234,
-		'yespowerIC'	=> 6235,
-		'yespowerR16'	=> 6236,
-		'yespowerRES'	=> 6237,
-		'yespowerSUGAR'	=> 6238,
-		'yespowerURX'	=> 6239,
-		'yespowerIOTS'	=> 6240,
-		'yespowerLTNCG'	=> 6241,
-		'yespowerLITB'	=> 6242,
-		'yespowerTIDE'	=> 6243,
-		'yespowerMGPC'	=> 6244,
-		'yespowerARWN'	=> 6245,
-		'power2b'	=> 7445,
-		'bastion'	=> 6433,
-		'hsr'		=> 7433,
-		'phi'		=> 8333,
-		'phi2'		=> 8332,
-		'phi5'		=> 8334,
-		'0x10'		=> 8335,
-		'pipe'		=> 9393,
-		'polytimos'	=> 8463,
-		'skunk'		=> 8433,
-		'tribus'	=> 8533,
-	    'a5a'   	=> 8633,
-		'minotaur'	=> 7018,
-		'minotaurx'	=> 7019,
-		'memehash'	=> 7020,
-		'megabtx'	=> 7066,
-		'megamec'	=> 7067,
-		'mike'		=> 7079,
-		'skydoge'	=> 7091,
-		
-		'astralhash'   	=> 8640,
-		'globalhash'   	=> 8650,
-		'jeonghash'   	=> 8660,
-		'padihash'   	=> 8670,
-		'pawelhash'   	=> 8680,
-		
-	);
-
+function getAlgoPort($algo) {
+    
+    $algo_ports = controller()->memcache->get("yaamp_algo_ports");
+    if(!$algo_ports) {
+        $algoslist = yaamp_get_algo_list();
+        if ($algoslist) {
+            foreach ($algoslist AS $algorow) {
+                if (isset($algorow['name'])) $algo_ports[$algorow['name']] = $algorow['port'];
+            }
+        }
+        
+        if($algo_ports) {
+            controller()->memcache->set("yaamp_algo_ports", $algo_ports);
+        }
+    }
+    
+    if (isset($algo_ports[$algo])) {
+        $algo_port = $algo_ports[$algo];
+    }
+    else {
+        $algo_port = '3033';
+    }
+    
 	global $configCustomPorts;
 	if(isset($configCustomPorts[$algo]))
 		return $configCustomPorts[$algo];
 
-	if(!isset($a[$algo]))
-		return 3033;
-
-	return $a[$algo];
+	return $algo_port;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -559,7 +210,45 @@ function take_yaamp_fee($v, $algo, $percent=-1)
 
 function yaamp_hashrate_constant($algo=null)
 {
-	return pow(2, 42);		// 0x400 00000000
+	switch ($algo) {
+		case 'equihash96':
+		case 'equihash125':
+		case 'equihash144':
+		case 'equihash192':
+		case 'equihash':
+			$target = 0x0000000004000000;
+			break;
+		default:
+			$target = 0x0000040000000000; // pow(2, 42);
+			break;
+	}
+	return $target;
+}
+
+function yaamp_hashrate_constant_coin($algo=null, $coinid=null)
+{
+    $coin_powlimit_bits = null;
+    
+    if (!is_null($coinid)) {
+        $coin = getdbo('db_coins', $coinid);
+        if (($coin) && (!is_null($coin->powlimit_bits))) {
+            $coin_powlimit_bits = $coin->powlimit_bits;
+        }
+    }
+    
+    if (is_null($coin_powlimit_bits)) {
+        $algo_list = yaamp_get_algo_list(false);
+        foreach($algo_list as $current_algo) {
+            if ($current_algo['name'] != $algo) continue;
+            $coin_powlimit_bits = $current_algo['powlimit_bits'];
+        }
+    }
+    
+    if (is_null($coin_powlimit_bits)) {
+        $coin_powlimit_bits = 32;
+    }
+    
+    return pow(2, $coin_powlimit_bits);
 }
 
 function yaamp_hashrate_step()
@@ -567,11 +256,75 @@ function yaamp_hashrate_step()
 	return 300;
 }
 
-function yaamp_profitability($coin)
+function yaamp_coin_nethash($coin , $coin_powlimit_bits = null , $coin_difficulty = null, $coin_reward = null, $coin_price = null) {
+
+	/*
+	$network_hash = controller()
+	->memcache
+	->get("yiimp-nethashrate-{$coin->symbol}");
+	if (!$network_hash)
+	{
+		$remote = new WalletRPC($coin);
+		if ($remote) $info = $remote->getmininginfo();
+		if (isset($info['networkhashps']))
+		{
+			$network_hash = $info['networkhashps'];
+			controller()
+				->memcache
+				->set("yiimp-nethashrate-{$coin->symbol}", $info['networkhashps'], 60);
+		}
+		else if (isset($info['netmhashps']))
+		{
+			$network_hash = floatval($info['netmhashps']) * 1e6;
+			controller()
+				->memcache
+				->set("yiimp-nethashrate-{$coin->symbol}", $network_hash, 60);
+		}
+		if ($network_hash) return $network_hash;
+	}
+	*/
+
+    if (is_null($coin_powlimit_bits)) {
+        if (!is_null($coin->powlimit_bits)) {
+            $coin_powlimit_bits = $coin->powlimit_bits;
+        }
+        else {
+            $algo_list = yaamp_get_algo_list(false);
+            foreach($algo_list as $current_algo) {
+                 if ($current_algo['name'] != $coin->algo) continue;
+                 $coin_powlimit_bits = $current_algo['powlimit_bits'];
+            }
+        }
+    }
+    
+    if (is_null($coin_powlimit_bits)) {
+        $coin_powlimit_bits = 32;
+    }
+
+    $maxtarget_powlimit = pow(2, $coin_powlimit_bits);
+
+//    $speed = $coin->difficulty * $maxtarget_powlimit / yaamp_algo_mBTC_factor($coin->algo) / max(min($coin->actual_ttf, 60), 30);
+    $blocktime = $coin->block_time? $coin->block_time : max(min($coin->actual_ttf, 60), 30);
+    $speed = $coin->difficulty * $maxtarget_powlimit / $blocktime;
+
+    return $speed;
+}
+
+function yaamp_profitability($coin , $coin_difficulty = null, $coin_reward = null, $coin_price = null)
 {
-	if(!$coin->difficulty) return 0;
+    if (is_null($coin_difficulty)) $coin_difficulty = $coin->difficulty;
+    if(!$coin_difficulty) return 0;
+
+    if (is_null($coin_reward)) $coin_reward = $coin->reward;
+    if (is_null($coin_price)) $coin_price = $coin->price;
 
 	$btcmhd = 20116.56761169 / $coin->difficulty * $coin->reward * $coin->price;
+
+	$speed = yaamp_coin_nethash($coin);
+	$blocktime = $coin->block_time? $coin->block_time : max(min($coin->actual_ttf, 60), 30);
+	$reward_per_second = ($coin->reward * $coin_price) / $blocktime;
+	$btcmhd = 24*60*60 * $reward_per_second / $speed * 1000000;
+
 	if(!$coin->auxpow && $coin->rpcencoding == 'POW')
 	{
 		$listaux = getdbolist('db_coins', "enable and visible and auto_ready and auxpow and algo='$coin->algo'");
@@ -579,7 +332,12 @@ function yaamp_profitability($coin)
 		{
 			if(!$aux->difficulty) continue;
 
-			$btcmhdaux = 20116.56761169 / $aux->difficulty * $aux->reward * $aux->price;
+			// $btcmhdaux = 20116.56761169 / $aux->difficulty * $aux->reward * $aux->price;
+			$aux_speed = yaamp_coin_nethash($aux);
+			$aux_blocktime = $aux->block_time? $aux->block_time : max(min($aux->actual_ttf, 60), 30);
+			$aux_reward_per_second = ($aux->reward * $aux->price) / $aux_blocktime;
+			$btcmhdaux = 24*60*60 * $aux_reward_per_second / $aux_speed * 1000000;
+
 			$btcmhd += $btcmhdaux;
 		}
 	}
@@ -592,15 +350,18 @@ function yaamp_convert_amount_user($coin, $amount, $user)
 {
 	$refcoin = getdbo('db_coins', $user->coinid);
 	$value = 0.;
-	if (YAAMP_ALLOW_EXCHANGE) {
-		if(!$refcoin) $refcoin = getdbosql('db_coins', "symbol='BTC'");
-		if(!$refcoin || $refcoin->price <= 0) return 0;
-		$value = $amount * $coin->price / $refcoin->price;
-	} else if ($coin->price && $refcoin && $refcoin->price > 0.) {
-		$value = $amount * $coin->price / $refcoin->price;
-	} else if ($coin->id == $user->coinid) {
+	if ($coin->id == $user->coinid) {
 		$value = $amount;
+	} else {
+		if (YAAMP_ALLOW_EXCHANGE) {
+			if(!$refcoin) $refcoin = getdbosql('db_coins', "symbol='BTC'");
+			if(!$refcoin || $refcoin->price <= 0) return 0;
+			$value = $amount * (($coin->auto_exchange)?$coin->price : 0.) / $refcoin->price;
+		} else if ($coin->price && $refcoin && $refcoin->price > 0.) {
+			$value = $amount * (($coin->auto_exchange)?$coin->price : 0.) / $refcoin->price;
+		}
 	}
+	
 	return $value;
 }
 
@@ -608,7 +369,9 @@ function yaamp_convert_earnings_user($user, $status)
 {
 	$refcoin = getdbo('db_coins', $user->coinid);
 	$value = 0.;
-	if (YAAMP_ALLOW_EXCHANGE) {
+	if ($refcoin && !$refcoin->auto_exchange) {
+		$value = dboscalar("SELECT sum(amount) FROM earnings WHERE $status AND userid={$user->id} and coinid={$user->coinid}");
+	} else if (YAAMP_ALLOW_EXCHANGE) {
 		if(!$refcoin) $refcoin = getdbosql('db_coins', "symbol='BTC'");
 		if(!$refcoin || $refcoin->price <= 0) return 0;
 		$value = dboscalar("SELECT sum(amount*price) FROM earnings WHERE $status AND userid={$user->id}");

@@ -15,7 +15,7 @@ class ExplorerController extends CommonController
 			if (is_numeric($actionID) && isset($_REQUEST['id'])) {
 				$this->forward('id');
 			}
-			elseif (strlen($actionID) <= 6 && !isset($_REQUEST['id'])) {
+			elseif (strlen($actionID) <= 10 && !isset($_REQUEST['id'])) {
 				$coin = getdbosql('db_coins', "symbol=:symbol", array(
 					':symbol'=>strtoupper($actionID)
 				));

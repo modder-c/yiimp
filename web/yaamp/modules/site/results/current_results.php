@@ -66,6 +66,7 @@ $total_solo_workers = 0;
 $showestimates = false;
 echo "<tbody>";
 
+$total_coins = 0; $total_users = 0; $total_workers = 0; $total_solo_workers = 0;
 foreach ($algos as $item)
 {
     $norm = $item[0];
@@ -157,8 +158,8 @@ foreach ($algos as $item)
             $port_count = getdbocount('db_stratums', "algo=:algo and symbol=:symbol", array(':algo' => $algo,':symbol' => $coin->symbol));
             $port_db = getdbosql('db_stratums', "algo=:algo and symbol=:symbol", array(':algo' => $algo,':symbol' => $coin->symbol));
 
-            $dontsell = $coin->dontsell;
-            if ($dontsell == 1) echo "<td align='center' valign='top' style='font-size: .8em;'><img width=13 src='/images/cancel.png'></td>";
+            $auto_exchange = $coin->auto_exchange;
+            if ($auto_exchange != 1) echo "<td align='center' valign='top' style='font-size: .8em;'><img width=13 src='/images/cancel.png'></td>";
             else echo "<td align='center' valign='top' style='font-size: .8em;'><img width=13 src='/images/ok.png'></td>";
 			
 			$min_payout = max(floatval(YAAMP_PAYMENTS_MINI), floatval($coin->payout_min));
@@ -176,8 +177,8 @@ foreach ($algos as $item)
 			else	
 				echo "<td align='center' style='font-size: .8em;'>$users_total</td>";
             
-			$workers_coins = getdbocount('db_workers', "algo=:algo and pid=:pid and not password like '%m=solo%'", array(':algo' => $algo,':pid' => $port_db->pid));
-            $solo_workers_coins = getdbocount('db_workers', "algo=:algo and pid=:pid and password like '%m=solo%'", array(':algo' => $algo,':pid' => $port_db->pid));
+			$workers_coins = getdbocount('db_workers', "algo=:algo and pid=:pid and not password like '%m=solo%'", array(':algo' => $algo,':pid' => (is_null($port_db)?0 :$port_db->pid)));
+            $solo_workers_coins = getdbocount('db_workers', "algo=:algo and pid=:pid and password like '%m=solo%'", array(':algo' => $algo,':pid' => (is_null($port_db)?0 :$port_db->pid)));
             if ($port_count == 1) 
 	    		echo "<td align='center' style='font-size: .8em;'>$workers_coins / $solo_workers_coins </td>";
 			else
@@ -193,32 +194,7 @@ foreach ($algos as $item)
             
             $min_ttf = $coin->network_ttf > 0 ? min($coin->actual_ttf, $coin->network_ttf) : $coin->actual_ttf;
 
-            $network_hash = controller()
-                ->memcache
-                ->get("yiimp-nethashrate-{$coin->symbol}");
-            if (!$network_hash)
-            {
-                $remote = new WalletRPC($coin);
-                if ($remote) $info = $remote->getmininginfo();
-                if (isset($info['networkhashps']))
-                {
-                    $network_hash = $info['networkhashps'];
-                    controller()
-                        ->memcache
-                        ->set("yiimp-nethashrate-{$coin->symbol}", $info['networkhashps'], 60);
-                }
-                else if (isset($info['netmhashps']))
-                {
-                    $network_hash = floatval($info['netmhashps']) * 1e6;
-                    controller()
-                        ->memcache
-                        ->set("yiimp-nethashrate-{$coin->symbol}", $network_hash, 60);
-                }
-		else
-		{
-			$network_hash = $coin->difficulty * 0x100000000 / ($min_ttf? $min_ttf: 60);
-		}
-            }
+            $network_hash = yaamp_coin_nethash($coin);
             $network_hash = $network_hash ? Itoa2($network_hash) . 'h/s' : '';
             echo "<td align='center' style='font-size: .8em;' data='$pool_hash'>$network_hash</td>";
             echo "<td align='center' style='font-size: .8em;'>{$fees}% / {$fees_solo}% </td>";

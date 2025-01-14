@@ -27,16 +27,17 @@ foreach(yaamp_get_algos() as $algo)
 {
 	if (!YAAMP_ALLOW_EXCHANGE && isset($coin) && $coin->algo != $algo) continue;
 
-	$user_pool_rate = yaamp_user_rate($userid, $algo);
+	$minercount = getdbocount('db_workers', "userid=$userid AND algo=:algo", array(':algo'=>$algo));
+	if (!$minercount) continue;
 
-	$pool_hash = yaamp_coin_rate($coin->id);
+	$user_pool_rate = yaamp_user_rate($userid, $algo);
+	$pool_hash = yaamp_pool_rate_pow($algo);
+
 	$user_ttf  = $user_pool_rate ? $coin->difficulty * 0x100000000 / $pool_hash : 0;
 	$user_ttf  = $user_ttf ? sectoa2($user_ttf) : '-';
 
 	$user_pool_rate = $user_pool_rate? Itoa2($user_pool_rate).'h/s': '-';
 	
-	$minercount = getdbocount('db_workers', "userid=$userid AND algo=:algo", array(':algo'=>$algo));
-
 	echo '<tr class="ssrow">';
 	echo '<td><b>'.$algo.'</b></td>';
 	echo '<td align="right" >'.$minercount.'</td>';

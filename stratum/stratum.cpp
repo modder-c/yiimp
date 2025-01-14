@@ -3,6 +3,9 @@
 #include <signal.h>
 #include <sys/resource.h>
 
+#include <string>
+#include <vector>
+
 CommonList g_list_coind;
 CommonList g_list_client;
 CommonList g_list_job;
@@ -48,6 +51,7 @@ int g_limit_txs_per_block = 0;
 bool g_handle_haproxy_ips = false;
 int g_socket_recv_timeout = 600;
 
+char g_log_directory[1024];
 bool g_debuglog_client;
 bool g_debuglog_hash;
 bool g_debuglog_socket;
@@ -60,6 +64,10 @@ bool g_autoexchange = true;
 uint64_t g_max_shares = 0;
 uint64_t g_shares_counter = 0;
 uint64_t g_shares_log = 0;
+
+// Equihash default
+uint32_t g_equihash_wn = EQUIHASH200_9_WN;
+uint32_t g_equihash_wk = EQUIHASH200_9_WK;
 
 bool g_allow_rolltime = true;
 time_t g_last_broadcasted = 0;
@@ -123,6 +131,8 @@ YAAMP_ALGO g_algos[] =
 	{"argon2d500", argon2d_dyn_hash, 0x10000, 0, 0 }, // Dynamic Argon2d Implementation
 	{"argon2d16000", argon2d16000_hash, 0x10000, 0, 0 }, // Argon2d16000 Implementation
 	{"astralhash", astralhash_hash, 0x100, 0, 0},
+	{"aurum", aurum_hash, 0x1000, 0, 0},
+	{"balloon", balloon_hash, 1, 0, 0},
 	{"bastion", bastion_hash, 1, 0 },
 	{"bcd", bcd_hash, 1, 0, 0},
 	{"bitcore", timetravel10_hash, 0x100, 0, 0},
@@ -139,6 +149,12 @@ YAAMP_ALGO g_algos[] =
 	{"dedal", dedal_hash, 0x100, 0, 0},
 	{"deep", deep_hash, 1, 0, 0},
 	{"dmd-gr", groestl_hash, 0x100, 0, 0}, /* diamond (double groestl) */
+	{"equihash", equi_hash, 0x100, 0, 0},
+	{"equihash125", equi_hash, 0x100, 0, 0},
+	{"equihash144", equi_hash, 0x100, 0, 0},
+	{"equihash192", equi_hash, 0x100, 0, 0},
+	{"equihash96", equi_hash, 0x100, 0, 0},
+	{"flex", flex_hash, 1, 0, sha3d_hash_hex},
 	{"fresh", fresh_hash, 0x100, 0, 0},
 	{"geek", geek_hash, 1, 0, 0},
 	{"gr", gr_hash, 0x10000, 0, 0},
@@ -171,6 +187,7 @@ YAAMP_ALGO g_algos[] =
 	{"minotaurx", minotaurx_hash, 1, 0, 0},
 	{"myr-gr", groestlmyriad_hash, 1, 0, 0}, /* groestl + sha 64 */
 	{"neoscrypt", neoscrypt_hash, 0x10000, 0, 0},
+	{"neoscrypt-xaya", neoscrypt_hash, 0x10000, 0, 0},
 	{"nist5", nist5_hash, 1, 0, 0},
 	{"pawelhash", pawelhash_hash, 0x100, 0, 0},
 	{"penta", penta_hash, 1, 0, 0},
@@ -266,22 +283,19 @@ int main(int argc, char **argv)
 {
 	if(argc < 2)
 	{
-		printf("usage: %s <algo>\n", argv[0]);
+		printf("usage: %s <config_file>\n", argv[0]);
 		return 1;
 	}
 
 	srand(time(NULL));
 	getifaddrs(&g_ifaddr);
 
-	initlog(argv[1]);
-
-#ifdef NO_EXCHANGE
-	// todo: init with a db setting or a yiimp shell command
-	g_autoexchange = false;
-#endif
+	// init g_log_directory with static value until set by config
+	sprintf(g_log_directory, "/var/log/yiimp/");
+	initlog(NULL);
 
 	char configfile[1024];
-	sprintf(configfile, "%s.conf", argv[1]);
+	sprintf(configfile, "%s", argv[1]);
 
 	dictionary *ini = iniparser_load(configfile);
 	if(!ini)
@@ -300,6 +314,11 @@ int main(int argc, char **argv)
 	strcpy(g_sql_password, iniparser_getstring(ini, "SQL:password", NULL));
 	g_sql_port = iniparser_getint(ini, "SQL:port", 3306);
 
+	if (iniparser_getint(ini, "STRATUM:autoexchange", 1) == 0)
+		g_autoexchange = false;
+	else
+		g_autoexchange = true;
+
 	// optional coin filters (to mine only one on a special port or a test instance)
 	char *coin_filter = iniparser_getstring(ini, "WALLETS:include", NULL);
 	strcpy(g_stratum_coin_include, coin_filter ? coin_filter : "");
@@ -310,6 +329,9 @@ int main(int argc, char **argv)
 	g_stratum_difficulty = iniparser_getdouble(ini, "STRATUM:difficulty", 16);
 	g_stratum_min_diff = iniparser_getdouble(ini, "STRATUM:diff_min", g_stratum_difficulty/2);
 	g_stratum_max_diff = iniparser_getdouble(ini, "STRATUM:diff_max", g_stratum_difficulty*8192);
+	
+	char *new_log_directory = iniparser_getstring(ini, "STRATUM:logdir", NULL);
+	if (new_log_directory) { strcpy(g_log_directory, new_log_directory); }
 
 	g_stratum_nicehash_difficulty = iniparser_getdouble(ini, "STRATUM:nicehash", 16);
 	g_stratum_nicehash_min_diff = iniparser_getdouble(ini, "STRATUM:nicehash_diff_min", g_stratum_nicehash_difficulty/2);
@@ -334,6 +356,11 @@ int main(int argc, char **argv)
 
 	iniparser_freedict(ini);
 
+	// re-init logfiles
+	closelogs(); initlog(g_stratum_algo);
+
+	validate_hashfunctions();
+	
 	g_current_algo = stratum_find_algo(g_stratum_algo);
 
 	if(!g_current_algo) yaamp_error("invalid algo");
@@ -347,6 +374,24 @@ int main(int argc, char **argv)
 
 	stratumlogdate("starting stratum for %s on %s:%d\n",
 		g_current_algo->name, g_tcp_server, g_tcp_port);
+
+	// init Equihash parameters
+	if (!strcmp(g_current_algo->name,"equihash144")) {
+		g_equihash_wn = EQUIHASH144_5_WN;
+		g_equihash_wk = EQUIHASH144_5_WK;
+	}
+	else if (!strcmp(g_current_algo->name,"equihash192")) {
+		g_equihash_wn = EQUIHASH192_7_WN;
+		g_equihash_wk = EQUIHASH192_7_WK;
+	}
+	else if (!strcmp(g_current_algo->name,"equihash96")) {
+		g_equihash_wn = EQUIHASH96_5_WN;
+		g_equihash_wk = EQUIHASH96_5_WK;
+	}
+	else if (!strcmp(g_current_algo->name,"equihash125")) {
+		g_equihash_wn = EQUIHASH125_4_WN;
+		g_equihash_wk = EQUIHASH125_4_WK;
+	}
 
 	// ntime should not be changed by miners for these algos
 	g_allow_rolltime = strcmp(g_stratum_algo,"x11evo");
@@ -412,6 +457,7 @@ int main(int argc, char **argv)
 		////////////////////////////////////
 
 //		source_prune();
+		job_check_status();
 
 		object_prune(&g_list_coind, coind_delete);
 		object_prune(&g_list_remote, remote_delete);
@@ -421,6 +467,13 @@ int main(int argc, char **argv)
 		object_prune(&g_list_worker, worker_delete);
 		object_prune(&g_list_share, share_delete);
 		object_prune(&g_list_submit, submit_delete);
+		debuglog("coin %i job %i cli %i block %i work %i share %i\n",
+					g_list_coind.count, g_list_job.count,
+					g_list_client.count, g_list_block.count,
+					g_list_worker.count, g_list_share.count);
+		if ( g_list_coind.count < g_list_job.count ) {
+			job_log_statistic();
+		}
 
 		if (!g_exiting) sleep(20);
 	}
@@ -525,4 +578,49 @@ void *stratum_thread(void *p)
 
 		pthread_detach(thread);
 	}
+}
+
+bool validate_hashfunctions() {
+    int len;
+	char input_hex[512]; char output_hex[8192];
+	char input_bin[512]; char output_bin[8192];
+	bool check_failure = false;
+
+	struct Checkdata {
+		string algoname;
+		YAAMP_HASH_FUNCTION hash_function;
+		string hashdata;
+		string inputdata;
+	};
+	std::vector<Checkdata> VectorCheckdata;
+
+	VectorCheckdata = {
+		// Bitcoin Block 835622
+		{ std::string("sha256") ,    sha256_double_hash , std::string("0000000000000000000042e44a0e7f1de918a9f495affd7163e8ce60277cd31e") , std::string("00003e20f05d18db34a53d848ab906c5924e032a6edb0b1a74fa000000000000000000002f02bf9836314afed25ef4aa258c596995da0ae656dab671cf3abd1387ab1e70ebabfb65595a03174763046f") },
+		// ZeroOneCoin Block 1136413
+		{ std::string("neoscrypt") , neoscrypt_hash ,     std::string("000000001c04534a1170d4ab8206660383fed56853e09d436cf74d1cf7659c40") , std::string("00000020e73e6b6c9e318f193adb76aeb01ffd508c48a83e30b5394c4291cf67010000005d1210c46d9aca742c1619d2928d87e5eedf731f082249ef4fa7a592e35a5169a8132c66bab3011d24a69b06") },
+		// Innova Block 4385783
+		{ std::string("tribus") ,    tribus_hash ,        std::string("0000000073effdeee31dbbcc72a6a8aab9c6fc3abc65c184b91e913121529ed6") , std::string("06000000cc4dd52af9ce356116e04f1ae4973ed0e77f9f713d958266509daeba00000000b85a3f9fa0ec87b5b85cbb43a221f66fd2de0e05cef11f60f123f6d980f0f0bfe3811966fa60011d2bef40e6") },
+	};
+
+	for(auto CurrentCheckdata : VectorCheckdata)
+    {
+		strcpy(input_hex,CurrentCheckdata.inputdata.c_str());
+		len = strlen(input_hex) / 2;
+		binlify((unsigned char*)input_bin, input_hex);
+
+		CurrentCheckdata.hash_function(input_bin, output_bin, len);
+		hexlify(input_bin,(const unsigned char*)output_bin, 32);
+		string_be((const char*)input_bin, output_hex);
+		if (CurrentCheckdata.hashdata != std::string(output_hex)) {
+			if (!check_failure) { debuglog("hash-function validation failed\n"); check_failure = true; };
+			debuglog("validation for \"%s\" failed\n", CurrentCheckdata.algoname.c_str());
+			debuglog(" this   : %s\n", output_hex);
+			debuglog(" correct: %s\n", CurrentCheckdata.hashdata.c_str());
+		}
+	}
+
+	if (!check_failure) { debuglog("hash-function passed\n"); }
+
+	return check_failure;
 }

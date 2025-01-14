@@ -386,6 +386,7 @@ class WalletRPC {
 					$res = $this->rpc->__call($method,$params);
 				} else {
 					$miningInfo = $this->rpc->getmininginfo();
+					if (!$miningInfo) { $res = false; break; }
 					$res["blocks"] = arraySafeVal($miningInfo,"blocks");
 					$res["difficulty"] = arraySafeVal($miningInfo,"difficulty");
 					$res["testnet"] = "main" != arraySafeVal($miningInfo,"chain");

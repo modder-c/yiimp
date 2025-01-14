@@ -62,8 +62,13 @@ foreach($list as $coin)
 		if ($remote)
 			$info = $remote->getmininginfo();
 		if (isset($info['networkhashps'])) {
-			$coin->network_hash = $info['networkhashps'];
-			controller()->memcache->set("yiimp-nethashrate-{$coin->symbol}", $info['networkhashps'], 60);
+			if (is_array($info['networkhashps'])) {
+				if (isset($info['networkhashps'][$coin->algo])) {
+					$coin->network_hash = $info['networkhashps'][$coin->algo];
+				}
+			}
+			else $coin->network_hash = $info['networkhashps'];
+			controller()->memcache->set("yiimp-nethashrate-{$coin->symbol}", $coin->network_hash, 60);
 		}
 		else if (isset($info['netmhashps'])) {
 			$coin->network_hash = floatval($info['netmhashps']) * 1e6;

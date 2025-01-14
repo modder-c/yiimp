@@ -1,6 +1,6 @@
 <?php
 
-require_once('serverconfig.php');
+require_once('/etc/yiimp/serverconfig.php');
 require_once('yaamp/defaultconfig.php');
 
 class CronjobController extends CommonController
@@ -76,7 +76,7 @@ class CronjobController extends CommonController
 		BackendUsersUpdate();
 
 		BackendUpdateServices();
-		BackendUpdateDeposit();
+		//BackendUpdateDeposit();
 
 		MonitorBTC();
 
@@ -97,6 +97,13 @@ class CronjobController extends CommonController
 		memcache_set($this->memcache->memcache, "cronjob_loop2_time_start", time());
 //		screenlog(__FUNCTION__.' done');
 	}
+
+	public function actionGithubScan()
+    {
+    	set_time_limit(0);
+    
+    	BackendCoinsVersionUpdate();
+    }
 
 	public function actionRun()
 	{
@@ -131,9 +138,7 @@ class CronjobController extends CommonController
 
 				getBitstampBalances();
 				getCexIoBalances();
-				doBittrexTrading();
 				doKrakenTrading();
-				doLiveCoinTrading();
 				doPoloniexTrading();
 				break;
 
@@ -141,8 +146,6 @@ class CronjobController extends CommonController
 				if(!YAAMP_PRODUCTION) break;
 
 				doBinanceTrading();
-				doBterTrading();
-				doBleutradeTrading();
 				doKuCoinTrading();
 				doYobitTrading();
 				break;
@@ -214,6 +217,14 @@ class CronjobController extends CommonController
 
 	//	BackendOptimizeTables();
 		debuglog('payments sequence done');
+	}
+	
+	// only for testing
+	public function actionTestfunction()
+	{
+	    set_time_limit(0);
+
+	    updateSafetradeMarkets();
 	}
 
 }

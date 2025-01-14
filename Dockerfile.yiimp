@@ -1,0 +1,80 @@
+FROM ubuntu:22.04 AS baseimage
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN set -xe \
+    && : "---------- Fix possible vulnerabilities ----------" \
+    && apt-get update && apt-get dist-upgrade -y \
+    && : "---------- add tools ----------" \
+    && apt-get install -y git bc dumb-init supervisor cron logrotate vim less nano mc memcached haproxy apache2 libapache2-mod-php \
+    && : "---------- add build-tools ----------" \
+    && apt-get install -y automake autotools-dev build-essential libtool libasan6 gcc-9 g++-9 python3 python3-venv libaugeas0 \
+    && : "---------- Persistent dependencies ----------" \
+    && apt-get install -y libgd-dev libicu-dev libmariadb-dev-compat libxml2-dev libonig-dev libcurl4-openssl-dev libssl-dev libxslt1-dev libzip-dev libz-dev libmemcached-dev libgmp-dev libsodium-dev \
+    && : "---------- php extensions ----------" \
+    && apt-get install -y php-bcmath php-curl php-exif php-gd php-intl php-memcache php-opcache php-mbstring php-mysqli php-soap php-shmop php-sysvshm php-sysvsem php-sysvmsg php-xml php-xsl php-zip \
+    && apt-get clean
+
+RUN set -xe \
+#    && : "---------- Copy config ----------" \
+#    && mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
+    && : "---------- Modify apache config ----------" \
+    && a2enmod rewrite
+
+COPY config/000-default.conf /etc/apache2/sites-available/
+COPY config/ports.conf /etc/apache2/
+
+RUN set -xe \
+    && : "---------- change gcc version to v9 as newer versions build invalid stratum code ----------"
+RUN rm -f /usr/bin/gcc
+RUN ln -s /usr/bin/gcc-9 /usr/bin/gcc
+RUN rm -f /usr/bin/g++
+RUN ln -s /usr/bin/g++-9 /usr/bin/g++
+
+# add Let’s Encrypt repository in /opt
+RUN python3 -m venv /opt/certbot/ && \
+    /opt/certbot/bin/pip install --upgrade pip && \
+    /opt/certbot/bin/pip install certbot && \
+    ln -s /opt/certbot/bin/certbot /usr/bin/certbot
+
+COPY --chmod=755 /bin/letsencrypt-* /usr/local/bin/
+
+# build stratum binary
+COPY /stratum /tmp/stratum
+WORKDIR /tmp/stratum
+RUN make buildonly && cp stratum /usr/bin/
+
+# create default log directory
+RUN mkdir /var/log/yiimp
+
+# Build devel image
+FROM baseimage as image-devel
+
+RUN set -xe \
+    && : "---------- changes only on devel env e.g. enable xdebug ----------"
+
+# Install Xdebug from source
+#COPY /contrib/xdebug-3.3.1.tar.gz /tmp/
+#RUN cd /tmp && tar -xvzf xdebug-3.3.1.tar.gz && cd xdebug-3.3.1 && ./rebuild.sh
+RUN set -xe \
+    && : "---------- Install Xdebug from apt repo ----------" \
+    && apt-get install -y php-xdebug
+
+COPY /config/xdebug.ini /usr/local/etc/php/conf.d/
+
+# change apache run-group to match with virtualbox-env
+RUN sed -i 's/APACHE_RUN_GROUP:=www-data/APACHE_RUN_GROUP:=vboxsf/g' /etc/apache2/envvars
+RUN groupadd -g 999 vboxsf && usermod -a -G vboxsf www-data
+
+WORKDIR /var/www/
+CMD ["apache2-foreground"]
+
+# Build production image
+FROM baseimage as image-prod
+
+COPY --chown=www-data:www-data /web/ /var/www/
+
+WORKDIR /var/www/
+
+COPY /config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+CMD ["/usr/bin/supervisord"]

@@ -234,6 +234,11 @@ class Bitcoin {
 			return FALSE;
 		}
 
+		if (is_null($this->response) || (!is_array($this->response)))
+		{
+			return FALSE;
+		}
+
 		return $this->response['result'];
 	}
 

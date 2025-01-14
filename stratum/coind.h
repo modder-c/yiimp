@@ -9,6 +9,8 @@ struct YAAMP_COIND_AUX
 
 	char hash[1024];
 	char target[1024];
+
+	bool skip_submitblock;
 };
 
 class YAAMP_COIND: public YAAMP_OBJECT
@@ -20,9 +22,7 @@ public:
 	YAAMP_RPC rpc;
 	char rpcencoding[32];
 
-//	pthread_t thread;
 	pthread_mutex_t mutex;
-//	pthread_cond_t cond;
 
 //	bool closing;
 
@@ -36,6 +36,7 @@ public:
 	char pubkey[1024];
 	char script_pubkey[1024];
 	bool p2sh_address;
+	bool p2wpkh;
 
 	bool pos;
 	bool hassubmitblock;
@@ -59,9 +60,13 @@ public:
 	double price;
 	int pool_ttf;
 	int actual_ttf;
+	int blocktime;
+	int powlimit_bits;
 
 	bool isaux;
+	pthread_mutex_t aux_mutex;
 	YAAMP_COIND_AUX aux;
+	bool mining_disabled;
 
 	int notreportingcounter;
 	bool usegetwork;
@@ -73,6 +78,11 @@ public:
 	bool usesegwit;
 	char commitment[128];
 	char witness_magic[16];
+
+	bool auto_exchange;
+	bool rpcdebug;
+
+	char personalization[1024];
 
 	YAAMP_JOB *job;
 //	YAAMP_JOB_TEMPLATE *templ;

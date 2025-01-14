@@ -18,7 +18,7 @@ class MarketController extends CommonController
 		{
 			$market->setAttributes($_POST['db_markets'], false);
 			if($market->save())
-				$this->redirect(array('site/coin', 'id'=>$coin->id));
+				$this->redirect(array('admin/coin', 'id'=>$coin->id));
 		}
 
 		$this->render('update', array('market'=>$market, 'coin'=>$coin));
@@ -62,13 +62,17 @@ class MarketController extends CommonController
 		$remote = new WalletRPC($coin);
 
 		$info = $remote->getinfo();
-		if(!$info || !$info['balance']) return false;
+		if(!$info || !$info['balance'])
+		{
+			user()->setFlash('error', "not enough balance $coin->name");
+			$this->redirect(array('admin/coin', 'id'=>$coin->id));
+		}
 
 		$deposit_info = $remote->validateaddress($market->deposit_address);
 		if(!$deposit_info || !isset($deposit_info['isvalid']) || !$deposit_info['isvalid'])
 		{
 			user()->setFlash('error', "invalid address $coin->name, $market->deposit_address");
-			$this->redirect(array('site/coin', 'id'=>$coin->id));
+			$this->redirect(array('admin/coin', 'id'=>$coin->id));
 		}
 
 		$amount = min($amount, $info['balance'] - $info['paytxfee']);
@@ -81,7 +85,7 @@ class MarketController extends CommonController
 		if(!$tx)
 		{
 			user()->setFlash('error', $remote->error);
-			$this->redirect(array('site/coin', 'id'=>$coin->id));
+			$this->redirect(array('admin/coin', 'id'=>$coin->id));
 		} else {
 			$market->lastsent = time();
 			$market->save();
@@ -98,7 +102,7 @@ class MarketController extends CommonController
 		$exchange->tx = $tx;
 		$exchange->save();
 
-		$this->redirect(array('site/coin', 'id'=>$coin->id));
+		$this->redirect(array('admin/coin', 'id'=>$coin->id));
 	}
 
 }

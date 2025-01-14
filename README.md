@@ -1,5 +1,58 @@
 <h1 align="center"> Yiimp - Yaamp Fork </h1>
 
+<h2 align="left"> Container-Environment </h3>
+
+** important notice: intented for local usage. if you want it to be available on public network you have to add more security rules like firewalling **
+
+info: the Makefile in this repo only cointains some helper commands for easier handling
+
+<h3 align="left"> Requirements </h3>
+
+* Linux
+* Mysql
+* Docker or Podman
+
+<h3 align="left"> build docker </h3>
+
+use
+
+	make build
+
+or as single command
+
+	podman build --tag yiimp --target image-prod -f Dockerfile.yiimp
+
+<h3 align="left"> configuration und run </h3>
+
+* first setup your mysql-database: create a 2 users (one for the web site (php) and one for the stratum connections)
+* if no memcached on system running, start the container internal one
+* the container has only default config built in so you have to link the live-config inside
+* create 2 folders - one for config, 1 for logfiles
+* use the config folder in repo as templates - modify supervisor-conf to your needs (which process to autostart and add stratum-processes if needed)
+* use "serverconfig.sample.php" as config template , rename to serverconfig.php and move config-dir
+* to access logfiles export the log-directory and the apache logfiles into the created log-folder
+
+to start container
+
+	make run
+
+or as single command
+
+	podman run --name=yiimp --network=host -v ./config:/etc/yiimp ./log:/var/www/log -v ./log:/var/log/yiimp -v ./yiimp/web:/var/www/ -v ./log:/var/log/apache2 -v ./config/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf yiimp
+
+inside the container starts supervisord for controlling the parts of pool altogether
+to start/stop each part head to http://localhost:8900/ or use cli
+
+	supervisorctl -u yiimp -p supervisor -s http://127.0.0.1:8900 status
+
+change supervisord.conf to 
+* set username and password
+* add stratum instances
+* control backend-processes
+
+additional SSL-support added by using HAProxy and Letsencrypt certificates - for HTTP/S and stratum connections
+
+<h2 align="left"> original description - maybe outdated</h2>
 <h3 align="left"> Requirements </h3>
 
 * Linux
@@ -161,3 +214,5 @@ xiaolin1579 :
 	
 	RXD : 1N8WZpwSPaFvbaSMzDrPbLqbfM8tLVE87e
 
+tpfuemp :
+	DOGE : DNQdyeLu9DtRfsZCFvy1GfJTwjWJoSWHLh

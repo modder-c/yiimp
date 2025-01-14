@@ -76,10 +76,24 @@ int client_send_difficulty(YAAMP_CLIENT *client, double difficulty)
 //	debuglog("%s diff %f\n", client->sock->ip, difficulty);
 	client->shares_per_minute = YAAMP_SHAREPERSEC;
 
-	if(difficulty >= 1)
-		client_call(client, "mining.set_difficulty", "[%.0f]", difficulty);
-	else
-		client_call(client, "mining.set_difficulty", "[%0.8f]", difficulty);
+	bool is_equihash = (strstr(g_current_algo->name, "equihash") == g_current_algo->name);
+
+	if(is_equihash) {
+		uint32_t user_target[32];
+		diff_to_target_equi(user_target, difficulty);
+		char user_target_hex[128]; memset(user_target_hex,0,128);
+		char user_target_hex_reversed[128]; memset(user_target_hex_reversed,0,128);
+		hexlify(user_target_hex, (uchar*)user_target, 32);
+		string_be(user_target_hex, user_target_hex_reversed);
+
+		client_call(client, "mining.set_target", "[\"%s\"]", user_target_hex_reversed);
+	}
+	else {
+		if(difficulty >= 1)
+			client_call(client, "mining.set_difficulty", "[%.0f]", difficulty);
+		else
+			client_call(client, "mining.set_difficulty", "[%0.8f]", difficulty);
+	}
 	return 0;
 }
 

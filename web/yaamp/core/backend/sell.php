@@ -16,8 +16,14 @@ function sellCoinToExchange($coin)
 
 	$remote = new WalletRPC($coin);
 
+	$wallet_zaddress = $coin->wallet_zaddress;
+	$zbalance = false;
+	if (!is_null($wallet_zaddress) && ($wallet_zaddress != '')) {
+	    $zbalance = $remote->z_getbalance($wallet_zaddress);
+	}
+
 	$info = $remote->getinfo();
-	if(!$info || !$info['balance']) return false;
+	if(!$info || (!$info['balance'] && !$zbalance)) return false;
 
 	if(!empty($coin->symbol2))
 	{
@@ -52,19 +58,50 @@ function sellCoinToExchange($coin)
 	$reserved2 = dboscalar("select sum(amount*price) from earnings
 		where status!=2 and userid in (select id from accounts where coinid=$coin->id)");
 
+	if (!isset($info['paytxfee'])) $info['paytxfee'] = 0;
+
 	$reserved = ($reserved1 + $reserved2) * 10;
 	$amount = $info['balance'] - $info['paytxfee'] - $reserved;
 
-//	if($reserved>0)
-//	{
-//		debuglog("$reserved1 $reserved2 out of {$info['balance']}");
-//		debuglog("reserving $reserved $coin->symbol out of $coin->balance, available $amount");
-//	}
+	if (!is_null($wallet_zaddress) && ($wallet_zaddress != '')) {
+	    // move coinbase-balance to z-address
+	    if ($amount > $coin->sellthreshold) {
+    	    $result = $remote->z_shieldcoinbase('*',$wallet_zaddress);
+    	    if (!$result) return;
+	    }
 
-	if($amount < $coin->reward/4)
-	{
-	//	debuglog("not enough $coin->symbol to sell $amount < $coin->reward /4");
-		return false;
+		$zamount = $zbalance - $info['paytxfee'] - $reserved;
+
+	    if ($zamount < $coin->sellthreshold)
+	    {
+	        debuglog("not enough $coin->symbol (zbalance) to sell $zamount < $coin->sellthreshold");
+	        return false;
+	    }
+	    
+        $txfee =  0.0001;
+        $zaddresses = [['address' => $deposit_address , 'amount' => round(($zamount - $txfee), 8)]];
+	    
+	    $tx = $remote->z_sendmany($wallet_zaddress, $zaddresses);
+	    if(!$tx)
+	    {
+	        debuglog("sending $zamount $coin->symbol to $deposit_address");
+	        debuglog($remote->error);
+	        return;
+	    }
+	    
+	}
+	else {
+	    if ($amount < $coin->sellthreshold)
+	    {
+	        // debuglog("not enough $coin->symbol to sell $amount < $coin->sellthreshold");
+	        return false;
+	    }
+	    
+	    if (($amount > $coin->sellthreshold) && ($amount < $coin->reward/4))
+	    {
+	        // debuglog("not enough $coin->symbol to sell $amount < $coin->reward /4");
+	        return false;
+	    }
 	}
 
 	$deposit_info = $remote->validateaddress($deposit_address);

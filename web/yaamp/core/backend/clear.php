@@ -31,7 +31,7 @@ function BackendClearEarnings($coinid = NULL)
 		}
 
 		$earning->status = 2;		// cleared
-		$earning->price = $coin->price;
+		$earning->price = ($coin->auto_exchange) ? $coin->price : 0 ;
 		$earning->save();
 
 // 		$refcoin = getdbo('db_coins', $user->coinid);
@@ -51,6 +51,6 @@ function BackendClearEarnings($coinid = NULL)
 	}
 
 	if($total_cleared>0)
-	 	debuglog("total cleared from mining $total_cleared BTC");
+		debuglog("total cleared from mining ".bitcoinvaluetoa($total_cleared)." BTC");
 }
 

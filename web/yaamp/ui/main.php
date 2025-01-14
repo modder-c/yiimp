@@ -104,23 +104,30 @@ function showPageHeader()
 	if (YAAMP_RENTAL)
 		showItemHeader(controller()->id=='renting', '/renting', 'Rental');
 
-	if(controller()->admin)
-	{
-		if (isAdminIP($_SERVER['REMOTE_ADDR']) === false)
-			debuglog("admin {$_SERVER['REMOTE_ADDR']}");
+	if (YIIMP_ADMIN_LOGIN) {
+		if(controller()->admin)
+		{
+			if (isAdminIP($_SERVER['REMOTE_ADDR']) === false)
+				debuglog("admin {$_SERVER['REMOTE_ADDR']}");
 
-		showItemHeader(controller()->id=='coin', '/coin', 'Coins');
-		showItemHeader($action=='common', '/site/common', 'Dashboard');
-		showItemHeader(controller()->id=='site'&&$action=='admin', "/site/admin", 'Wallets');
+			showItemHeader(controller()->id=='coin', '/coin', 'Coins');
+			showItemHeader($action=='common', '/admin/dashboard', 'Dashboard');
+			showItemHeader(controller()->id=='admin'&&$action=='coinwallets', "/admin/coinwallets", 'Wallets');
 
-		if (YAAMP_RENTAL)
-			showItemHeader(controller()->id=='renting' && $action=='admin', '/renting/admin', 'Jobs');
+			if (YAAMP_RENTAL)
+				showItemHeader(controller()->id=='renting' && $action=='admin', '/renting/admin', 'Jobs');
 
-		if (YAAMP_ALLOW_EXCHANGE)
-			showItemHeader(controller()->id=='trading', '/trading', 'Trading');
+			if (YAAMP_ALLOW_EXCHANGE)
+				showItemHeader(controller()->id=='trading', '/trading', 'Trading');
 
-		if (YAAMP_USE_NICEHASH_API)
-			showItemHeader(controller()->id=='nicehash', '/nicehash', 'Nicehash');
+			if (YAAMP_USE_NICEHASH_API)
+				showItemHeader(controller()->id=='nicehash', '/nicehash', 'Nicehash');
+
+			showItemHeader(controller()->id=='logout', '/admin/logout', 'Logout');
+		}
+		else {
+			showItemHeader(controller()->id=='login', '/admin/login', 'Login');
+		}
 	}
 
 	echo '<span style="float: right;">';
@@ -142,7 +149,7 @@ function showPageFooter()
 	$year = date("Y", time());
 
 	echo "<p>&copy; $year ".YAAMP_SITE_NAME.' - '.
-		'<a href="https://github.com/Kudaraidee/yiimp">Open source Project</a></p>';
+		'<a href="https://github.com/tpfuemp/yiimp">Open source Project</a></p>';
 
 	echo '</div><!-- footer -->';
 }

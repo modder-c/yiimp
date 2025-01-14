@@ -51,7 +51,7 @@ function BackendCoinPayments($coin)
 		if($coin->symbol == 'DCR') $min_payout = 0.01005;
 	}
 
-	$users = getdbolist('db_accounts', "balance>$min_payout AND coinid={$coin->id} ORDER BY balance DESC");
+	$users = getdbolist('db_accounts', "balance>$min_payout AND (payout_threshold IS NULL OR balance>payout_threshold) AND coinid={$coin->id} and !is_locked ORDER BY balance DESC");
 
 	// todo: enhance/detect payout_max from normal sendmany error
 	if($coin->symbol == 'BITC' || $coin->symbol == 'BNODE' || $coin->symbol == 'BOD' || $coin->symbol == 'DIME' || $coin->symbol == 'BTCRY' || $coin->symbol == 'IOTS' || $coin->symbol == 'ECC' || $coin->symbol == 'ADOT' || $coin->symbol == 'SAPP' || $coin->symbol == 'CURVE' || $coin->symbol == 'CBE' || $coin->symbol == 'PEPEW' || !empty($coin->payout_max))
