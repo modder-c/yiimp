@@ -17,6 +17,7 @@ UPDATE `algos` SET `color` = '#e0d0e0', `speedfactor` = 1, `port` = 4241, `visib
 UPDATE `algos` SET `color` = '#e0d0e0', `speedfactor` = 1, `port` = 4238, `visible` = 1 WHERE `name` = 'argon2d250';
 UPDATE `algos` SET `color` = '#e0d0e0', `speedfactor` = 1, `port` = 4240, `visible` = 1 WHERE `name` = 'argon2d4096';
 UPDATE `algos` SET `color` = '#e2d0d2', `speedfactor` = 1, `port` = 8640, `visible` = 1 WHERE `name` = 'astralhash';
+UPDATE `algos` SET `color` = '#e0d0e0', `speedfactor` = 1, `port` = 5050, `visible` = 1 WHERE `name` = 'kawpow';
 UPDATE `algos` SET `color` = '#e2e81f', `speedfactor` = 1, `port` = 6434, `visible` = 1 WHERE `name` = 'aurum';
 UPDATE `algos` SET `color` = '#e0b0b0', `speedfactor` = 1, `port` = 5100, `visible` = 1 WHERE `name` = 'balloon';
 UPDATE `algos` SET `color` = '#e0b0b0', `speedfactor` = 1, `port` = 6433, `visible` = 1 WHERE `name` = 'bastion';
