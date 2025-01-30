@@ -16,7 +16,7 @@ info: the Makefile in this repo only cointains some helper commands for easier h
 
 use
 
-	make build
+	make build..
 
 or as single command
 
