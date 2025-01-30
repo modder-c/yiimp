@@ -7,15 +7,13 @@ function updateRawcoins()
 {
 	debuglog(__FUNCTION__);
 	// exit();
-	exchange_set_default('altmarkets', 'disabled', true);
-	exchange_set_default('binance', 'disabled', true);
-	exchange_set_default('exbitron', 'disabled', false);
-	exchange_set_default('hitbtc', 'disabled', true);
-	exchange_set_default('kraken', 'disabled', true);
-	exchange_set_default('kucoin', 'disabled', true);
-	exchange_set_default('poloniex', 'disabled', true);
-	exchange_set_default('yobit', 'disabled', false);
-
+	exchange_set_default('bittrex', 'disabled', true);
+         exchange_set_default('poloniex', 'disabled', true);
+        exchange_set_default('binance', 'disabled', true);
+        exchange_set_default('kraken', 'disabled', true);
+       exchange_set_default('kucoin', 'disabled', true);
+       exchange_set_default('xeggex', 'disabled', false);
+	
 	settings_prefetch_all();
 
 	// $markets_name = array('p2pb2b','btc-alpha','tradeogre','bibox','poloniex','yobit','coinsmarkets','escodex','hitbtc','kraken','binance','gateio','kucoin','shapeshift');
