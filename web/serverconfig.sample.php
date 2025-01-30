@@ -31,7 +31,7 @@ define('YAAMP_TXFEE_RENTING_WD', 0.002);
 define('YAAMP_PAYMENTS_FREQ', 3*60*60);
 define('YAAMP_PAYMENTS_MINI', 0.001);
 
-define('YAAMP_ALLOW_EXCHANGE', false);
+define('YAAMP_ALLOW_EXCHANGE', true);
 define('YIIMP_FIAT_ALTERNATIVE', 'EUR'); // USD is main
 
 define('YAAMP_USE_NICEHASH_API', false);
@@ -73,39 +73,13 @@ define('YIIMP_MYSQLDUMP_PASS', '<my_mysql_password>');
  *
  * access tokens required to create/cancel orders and access your balances/deposit addresses
  */
-define('EXCH_ALTMARKETS_KEY', '');
 
-define('EXCH_BINANCE_KEY', '');
-define('EXCH_BINANCE_SECRET', '');
 
-define('EXCH_CEXIO_SECRET', '');
-
-define('EXCH_EXBITRON_KEY', '');
-
-define('EXCH_HITBTC_SECRET', '');
-define('EXCH_HITBTC_KEY','');
-
-define('EXCH_KRAKEN_KEY', '');
-define('EXCH_KRAKEN_SECRET','');
-
-define('EXCH_KUCOIN_SECRET', '');
-
-define('EXCH_POLONIEX_KEY', '');
-define('EXCH_POLONIEX_SECRET', '');
-
-define('EXCH_SAFETRADE_KEY', '');
-define('EXCH_SAFETRADE_SECRET', '');
-
-define('EXCH_TRADEOGRE_SECRET', '');
-
-define('EXCH_YOBIT_KEY', '');
-define('EXCH_YOBIT_SECRET', '');
-
-define('EXCH_XEGGEX_KEY', '');
-define('EXCH_XEGGEX_SECRET', '');
+define('EXCH_XEGGEX_KEY', 'a4fe74547363d748c141183c663be476');
+define('EXCH_XEGGEX_SECRET', '71386947e9091f857c7791e696b37ada2638f53ac7db4a72');
 
 // Automatic withdraw to Yaamp btc wallet if btc balance > 0.3
-define('EXCH_AUTO_WITHDRAW', 0.3);
+define('EXCH_AUTO_WITHDRAW', 0.0001);
 
 // nicehash keys deposit account & amount to deposit at a time
 define('NICEHASH_API_KEY','521c254d-8cc7-4319-83d2-ac6c604b5b49');
